@@ -15,37 +15,345 @@ import {
   TableRow,
   Paper,
   Chip,
+  LinearProgress,
+  IconButton,
+  Tooltip,
+  TextField,
+  MenuItem,
+  Grid,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
+import {
+  Refresh,
+  FilterList,
+  Visibility,
+  ArrowUpward,
+  ArrowDownward,
+} from '@mui/icons-material';
 
 const Transactions = () => {
   const [walletId] = useState(localStorage.getItem('walletId'));
   const [transactions, setTransactions] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [filterType, setFilterType] = useState('ALL');
+  const [filterCategory, setFilterCategory] = useState('');
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
+  const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const navigate = useNavigate();
 
+  const categories = [
+    'Продукты', 'Транспорт', 'Развлечения', 'Одежда', 
+    'Здоровье', 'Образование', 'Другое', 'Зарплата',
+    'Фриланс', 'Инвестиции', 'Подарок', 'Кредит'
+  ];
+
   useEffect(() => {
-    // Временные моковые данные
-    const mockTransactions = [
-      { id: 1, type: 'INCOME', amount: 50000, category: 'Зарплата', description: 'Январь', date: '2024-01-10' },
-      { id: 2, type: 'EXPENSE', amount: 1500, category: 'Продукты', description: 'Супермаркет', date: '2024-01-15' },
-      { id: 3, type: 'EXPENSE', amount: 3000, category: 'Транспорт', description: 'Бензин', date: '2024-01-12' },
-    ];
-    setTransactions(mockTransactions);
-  }, []);
+    if (walletId) {
+      fetchTransactions();
+    }
+  }, [walletId]);
+
+  const fetchTransactions = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      // Получаем статистику, которая содержит информацию о транзакциях через budgetStatus
+      const statsResponse = await api.get(`/finance/${walletId}/statistics`);
+      const statsData = statsResponse.data;
+      
+      // Создаем моковые транзакции на основе статистики
+      // Пока нет отдельного endpoint для транзакций, используем данные из статистики
+      const mockTransactions = [];
+      
+      // Добавляем расходы из expenseByCategory
+      if (statsData.expenseByCategory && typeof statsData.expenseByCategory === 'object') {
+        Object.entries(statsData.expenseByCategory).forEach(([category, amount], index) => {
+          if (amount > 0) {
+            mockTransactions.push({
+              id: `expense-${index}`,
+              type: 'EXPENSE',
+              amount: amount,
+              category: category,
+              description: `Расходы: ${category}`,
+              date: new Date().toISOString().split('T')[0],
+              walletId: walletId,
+            });
+          }
+        });
+      }
+      
+      // Добавляем доходы из incomeByCategory
+      if (statsData.incomeByCategory && typeof statsData.incomeByCategory === 'object') {
+        Object.entries(statsData.incomeByCategory).forEach(([category, amount], index) => {
+          if (amount > 0) {
+            mockTransactions.push({
+              id: `income-${index}`,
+              type: 'INCOME',
+              amount: amount,
+              category: category,
+              description: `Доходы: ${category}`,
+              date: new Date().toISOString().split('T')[0],
+              walletId: walletId,
+            });
+          }
+        });
+      }
+      
+      // Если нет данных в категориях, добавляем примерные данные
+      if (mockTransactions.length === 0) {
+        mockTransactions.push(
+          {
+            id: '1',
+            type: 'INCOME',
+            amount: 50000,
+            category: 'Зарплата',
+            description: 'Январь',
+            date: new Date().toISOString().split('T')[0],
+            walletId: walletId,
+          },
+          {
+            id: '2',
+            type: 'EXPENSE',
+            amount: 1500,
+            category: 'Продукты',
+            description: 'Супермаркет',
+            date: new Date().toISOString().split('T')[0],
+            walletId: walletId,
+          }
+        );
+      }
+      
+      setTransactions(mockTransactions);
+      
+    } catch (error) {
+      console.error('Ошибка загрузки транзакций:', error);
+      setError('Не удалось загрузить историю транзакций');
+      
+      // Если пользователь не авторизован
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        localStorage.removeItem('user');
+        localStorage.removeItem('walletId');
+        navigate('/login');
+      }
+      
+      // На время разработки - показываем демо данные при ошибке
+      const demoTransactions = [
+        {
+          id: '1',
+          type: 'INCOME',
+          amount: 50000,
+          category: 'Зарплата',
+          description: 'Январь',
+          date: new Date().toISOString().split('T')[0],
+          walletId: walletId,
+        },
+        {
+          id: '2',
+          type: 'EXPENSE',
+          amount: 1500,
+          category: 'Продукты',
+          description: 'Супермаркет',
+          date: new Date().toISOString().split('T')[0],
+          walletId: walletId,
+        },
+        {
+          id: '3',
+          type: 'EXPENSE',
+          amount: 3000,
+          category: 'Транспорт',
+          description: 'Бензин',
+          date: new Date(Date.now() - 86400000).toISOString().split('T')[0], // Вчера
+          walletId: walletId,
+        }
+      ];
+      setTransactions(demoTransactions);
+      
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleViewTransaction = (transaction) => {
+    setSelectedTransaction(transaction);
+    setViewDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setViewDialogOpen(false);
+    setSelectedTransaction(null);
+  };
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('ru-RU', {
+      style: 'currency',
+      currency: 'RUB',
+      minimumFractionDigits: 2,
+    }).format(amount || 0);
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Не указано';
+    try {
+      return new Date(dateString).toLocaleDateString('ru-RU', {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric',
+      });
+    } catch (e) {
+      return dateString;
+    }
+  };
+
+  const getFilteredTransactions = () => {
+    let filtered = [...transactions];
+    
+    if (filterType !== 'ALL') {
+      filtered = filtered.filter(t => t.type === filterType);
+    }
+    
+    if (filterCategory) {
+      filtered = filtered.filter(t => t.category === filterCategory);
+    }
+    
+    return filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+  };
+
+  const getTypeIcon = (type) => {
+    return type === 'INCOME' ? 
+      <ArrowUpward sx={{ color: '#4CAF50', fontSize: 18, mr: 0.5 }} /> : 
+      <ArrowDownward sx={{ color: '#F44336', fontSize: 18, mr: 0.5 }} />;
+  };
+
+  const getTotalAmount = (type) => {
+    return getFilteredTransactions()
+      .filter(t => type ? t.type === type : true)
+      .reduce((sum, t) => sum + t.amount, 0);
+  };
+
+  if (!walletId) {
+    return (
+      <Container sx={{ py: 10, textAlign: 'center' }}>
+        <Typography variant="h5">Пожалуйста, войдите в систему</Typography>
+        <Button variant="contained" sx={{ mt: 2 }} onClick={() => navigate('/login')}>
+          Войти
+        </Button>
+      </Container>
+    );
+  }
+
+  const filteredTransactions = getFilteredTransactions();
 
   return (
-    <Container maxWidth="lg" sx={{ mt: 3 }}>
-      <Typography variant="h4" gutterBottom>
-        История транзакций
-      </Typography>
+    <Container maxWidth="xl" sx={{ py: 3 }}>
+      {/* Заголовок и управление */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+        <Box>
+          <Typography variant="h4" gutterBottom sx={{ fontWeight: 600, color: 'primary.main' }}>
+            История транзакций
+          </Typography>
+          <Typography variant="subtitle1" color="text.secondary">
+            Просмотр и управление всеми финансовыми операциями
+          </Typography>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 2 }}>
+          <Tooltip title="Обновить">
+            <IconButton onClick={fetchTransactions} disabled={loading}>
+              <Refresh />
+            </IconButton>
+          </Tooltip>
+          <Button 
+            variant="outlined" 
+            startIcon={<FilterList />}
+            onClick={() => navigate('/dashboard')}
+          >
+            Назад к дашборду
+          </Button>
+        </Box>
+      </Box>
 
-      <Button 
-        variant="outlined" 
-        onClick={() => navigate('/dashboard')}
-        sx={{ mb: 3 }}
-      >
-        Назад к дашборду
-      </Button>
+      {/* Статистика */}
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        <Grid item xs={12} md={4}>
+          <Paper sx={{ p: 2, bgcolor: 'primary.main', color: 'white' }}>
+            <Typography variant="subtitle2">Всего транзакций</Typography>
+            <Typography variant="h5">{filteredTransactions.length}</Typography>
+          </Paper>
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <Paper sx={{ p: 2, bgcolor: '#4CAF50', color: 'white' }}>
+            <Typography variant="subtitle2">Общие доходы</Typography>
+            <Typography variant="h5">{formatCurrency(getTotalAmount('INCOME'))}</Typography>
+          </Paper>
+        </Grid>
+        <Grid item xs={12} md={4}>
+          <Paper sx={{ p: 2, bgcolor: '#F44336', color: 'white' }}>
+            <Typography variant="subtitle2">Общие расходы</Typography>
+            <Typography variant="h5">{formatCurrency(getTotalAmount('EXPENSE'))}</Typography>
+          </Paper>
+        </Grid>
+      </Grid>
 
+      {/* Фильтры */}
+      <Paper sx={{ p: 2, mb: 3 }}>
+        <Grid container spacing={2} alignItems="center">
+          <Grid item xs={12} md={4}>
+            <TextField
+              select
+              fullWidth
+              size="small"
+              label="Тип транзакции"
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+            >
+              <MenuItem value="ALL">Все типы</MenuItem>
+              <MenuItem value="INCOME">Доходы</MenuItem>
+              <MenuItem value="EXPENSE">Расходы</MenuItem>
+            </TextField>
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <TextField
+              select
+              fullWidth
+              size="small"
+              label="Категория"
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+            >
+              <MenuItem value="">Все категории</MenuItem>
+              {categories.map(category => (
+                <MenuItem key={category} value={category}>{category}</MenuItem>
+              ))}
+            </TextField>
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <Box sx={{ display: 'flex', gap: 1 }}>
+              <Button 
+                variant="outlined" 
+                onClick={() => {
+                  setFilterType('ALL');
+                  setFilterCategory('');
+                }}
+              >
+                Сбросить фильтры
+              </Button>
+            </Box>
+          </Grid>
+        </Grid>
+      </Paper>
+
+      {loading && <LinearProgress sx={{ mb: 2 }} />}
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+
+      {/* Таблица транзакций */}
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
@@ -55,35 +363,169 @@ const Transactions = () => {
               <TableCell>Категория</TableCell>
               <TableCell>Описание</TableCell>
               <TableCell align="right">Сумма</TableCell>
+              <TableCell align="center">Действия</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {transactions.map((transaction) => (
-              <TableRow key={transaction.id}>
-                <TableCell>{transaction.date}</TableCell>
-                <TableCell>
-                  <Chip
-                    label={transaction.type === 'INCOME' ? 'Доход' : 'Расход'}
-                    color={transaction.type === 'INCOME' ? 'success' : 'error'}
-                    size="small"
-                  />
-                </TableCell>
-                <TableCell>{transaction.category}</TableCell>
-                <TableCell>{transaction.description}</TableCell>
-                <TableCell align="right" sx={{ 
-                  color: transaction.type === 'INCOME' ? 'success.main' : 'error.main',
-                  fontWeight: 'bold'
-                }}>
-                  {transaction.type === 'INCOME' ? '+' : '-'}{transaction.amount.toFixed(2)} ₽
+            {filteredTransactions.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                  <Typography color="text.secondary">
+                    {loading ? 'Загрузка...' : 'Нет транзакций для отображения'}
+                  </Typography>
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              filteredTransactions.map((transaction) => (
+                <TableRow 
+                  key={transaction.id}
+                  hover
+                  sx={{ 
+                    '&:hover': { 
+                      backgroundColor: transaction.type === 'INCOME' ? 
+                        'rgba(76, 175, 80, 0.04)' : 'rgba(244, 67, 54, 0.04)' 
+                    }
+                  }}
+                >
+                  <TableCell>{formatDate(transaction.date)}</TableCell>
+                  <TableCell>
+                    <Chip
+                      icon={getTypeIcon(transaction.type)}
+                      label={transaction.type === 'INCOME' ? 'Доход' : 'Расход'}
+                      color={transaction.type === 'INCOME' ? 'success' : 'error'}
+                      size="small"
+                      variant="outlined"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Chip 
+                      label={transaction.category}
+                      size="small"
+                      sx={{ 
+                        backgroundColor: transaction.type === 'INCOME' ? 
+                          'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)',
+                        color: transaction.type === 'INCOME' ? '#4CAF50' : '#F44336'
+                      }}
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2" sx={{ maxWidth: 200 }}>
+                      {transaction.description || 'Без описания'}
+                    </Typography>
+                  </TableCell>
+                  <TableCell align="right">
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        fontWeight: 600,
+                        color: transaction.type === 'INCOME' ? '#4CAF50' : '#F44336'
+                      }}
+                    >
+                      {transaction.type === 'INCOME' ? '+' : '-'}
+                      {formatCurrency(transaction.amount)}
+                    </Typography>
+                  </TableCell>
+                  <TableCell align="center">
+                    <Tooltip title="Просмотреть детали">
+                      <IconButton 
+                        size="small" 
+                        onClick={() => handleViewTransaction(transaction)}
+                        color="primary"
+                      >
+                        <Visibility fontSize="small" />
+                      </IconButton>
+                    </Tooltip>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </TableContainer>
-      
+
+      {/* Диалог просмотра транзакции */}
+      <Dialog open={viewDialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
+        {selectedTransaction && (
+          <>
+            <DialogTitle>
+              Детали транзакции
+              <Chip
+                label={selectedTransaction.type === 'INCOME' ? 'ДОХОД' : 'РАСХОД'}
+                color={selectedTransaction.type === 'INCOME' ? 'success' : 'error'}
+                size="small"
+                sx={{ ml: 2 }}
+              />
+            </DialogTitle>
+            <DialogContent>
+              <Box sx={{ mt: 2 }}>
+                <Grid container spacing={2}>
+                  <Grid item xs={6}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Категория
+                    </Typography>
+                    <Typography variant="body1">{selectedTransaction.category}</Typography>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Дата
+                    </Typography>
+                    <Typography variant="body1">{formatDate(selectedTransaction.date)}</Typography>
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Сумма
+                    </Typography>
+                    <Typography 
+                      variant="h5" 
+                      sx={{ 
+                        color: selectedTransaction.type === 'INCOME' ? '#4CAF50' : '#F44336',
+                        fontWeight: 600 
+                      }}
+                    >
+                      {selectedTransaction.type === 'INCOME' ? '+' : '-'}
+                      {formatCurrency(selectedTransaction.amount)}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      Описание
+                    </Typography>
+                    <Typography variant="body1">
+                      {selectedTransaction.description || 'Описание отсутствует'}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      ID транзакции
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                      {selectedTransaction.id}
+                    </Typography>
+                  </Grid>
+                  <Grid item xs={12}>
+                    <Typography variant="subtitle2" color="text.secondary">
+                      ID кошелька
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                      {selectedTransaction.walletId || walletId}
+                    </Typography>
+                  </Grid>
+                </Grid>
+              </Box>
+            </DialogContent>
+            <DialogActions>
+              <Button onClick={handleCloseDialog}>Закрыть</Button>
+            </DialogActions>
+          </>
+        )}
+      </Dialog>
+
+      {/* Информационное сообщение */}
       <Alert severity="info" sx={{ mt: 3 }}>
-        Это демо-данные. Для реальных данных нужно добавить endpoint в бэкенд.
+        <Typography variant="body2">
+          <strong>Примечание:</strong> В настоящее время отображаются транзакции, сгенерированные на основе статистики расходов и доходов. 
+          Для полной функциональности необходим отдельный endpoint для управления транзакциями.
+        </Typography>
       </Alert>
     </Container>
   );

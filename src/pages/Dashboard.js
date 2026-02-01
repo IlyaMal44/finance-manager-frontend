@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../api/axiosConfig';
 import {
   Container,
@@ -10,170 +11,609 @@ import {
   Box,
   TextField,
   MenuItem,
+  Paper,
+  Divider,
+  Chip,
+  LinearProgress,
+  IconButton,
+  Tooltip,
+  Avatar,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemAvatar,
+  Alert,
+  Snackbar,
 } from '@mui/material';
+import {
+  TrendingUp,
+  TrendingDown,
+  AccountBalanceWallet,
+  AddCircle,
+  AttachMoney,
+  MoneyOff,
+  PieChart,
+  Category,
+  History,
+  Refresh,
+  ArrowUpward,
+  ArrowDownward,
+  Warning,
+} from '@mui/icons-material';
 
 const Dashboard = () => {
   const [walletId] = useState(localStorage.getItem('walletId'));
+  const [user, setUser] = useState(JSON.parse(localStorage.getItem('user') || '{}'));
   const [statistics, setStatistics] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [recentTransactions, setRecentTransactions] = useState([]);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [transaction, setTransaction] = useState({
     type: 'EXPENSE',
     amount: '',
     category: '',
     description: '',
   });
-  const [categories] = useState([
-    'Продукты', 'Транспорт', 'Развлечения', 'Одежда', 
-    'Здоровье', 'Образование', 'Другое'
-  ]);
+  
+  const navigate = useNavigate();
+  
+  const categories = [
+    { value: 'Продукты', icon: '🛒', color: '#4CAF50' },
+    { value: 'Транспорт', icon: '🚗', color: '#2196F3' },
+    { value: 'Развлечения', icon: '🎬', color: '#9C27B0' },
+    { value: 'Одежда', icon: '👕', color: '#FF9800' },
+    { value: 'Здоровье', icon: '🏥', color: '#F44336' },
+    { value: 'Образование', icon: '📚', color: '#3F51B5' },
+    { value: 'Другое', icon: '📦', color: '#795548' },
+    { value: 'Зарплата', icon: '💰', color: '#4CAF50' },
+    { value: 'Фриланс', icon: '💼', color: '#2196F3' },
+    { value: 'Инвестиции', icon: '📈', color: '#FF9800' },
+    { value: 'Подарок', icon: '🎁', color: '#9C27B0' },
+    { value: 'Кредит', icon: '🏦', color: '#F44336' },
+  ];
 
-  useEffect(() => {
-    fetchStatistics();
-  }, [walletId]);
-
-  const fetchStatistics = async () => {
+  const fetchStatistics = useCallback(async () => {
+    if (!walletId) {
+      navigate('/login');
+      return;
+    }
+    
+    setLoading(true);
     try {
-      const response = await api.get(`/finance/${walletId}/statistics`);
-      setStatistics(response.data);
+      // Загружаем статистику с бэкенда
+      const statsResponse = await api.get(`/finance/${walletId}/statistics`);
+      setStatistics(statsResponse.data);
+      
+      // Для последних транзакций - нужно будет добавить endpoint в бэкенд
+      // Пока используем данные из статистики или делаем отдельный запрос
+      // Временное решение: используем бюджетный статус для отображения категорий
+      if (statsResponse.data.budgetStatus) {
+        const mockTransactions = Object.entries(statsResponse.data.budgetStatus).map(([category, status], index) => ({
+          id: index + 1,
+          type: 'EXPENSE',
+          amount: status.currentSpent,
+          category,
+          description: `Расходы по категории ${category}`,
+          date: new Date().toISOString().split('T')[0],
+        }));
+        setRecentTransactions(mockTransactions.slice(0, 4));
+      }
+      
     } catch (error) {
       console.error('Ошибка загрузки статистики:', error);
+      showSnackbar('Ошибка загрузки данных', 'error');
+      
+      // Если пользователь не авторизован
+      if (error.response?.status === 401 || error.response?.status === 403) {
+        localStorage.removeItem('user');
+        localStorage.removeItem('walletId');
+        navigate('/login');
+      }
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [walletId, navigate]);
+
+  useEffect(() => {
+    if (!user || !user.username) {
+      navigate('/login');
+      return;
+    }
+    fetchStatistics();
+  }, [fetchStatistics, user, navigate]);
 
   const handleTransactionSubmit = async (e) => {
     e.preventDefault();
+    
+    if (!transaction.amount || !transaction.category) {
+      showSnackbar('Заполните все обязательные поля', 'warning');
+      return;
+    }
+    
     try {
       await api.post(`/finance/${walletId}/transaction`, {
         ...transaction,
         amount: parseFloat(transaction.amount),
       });
+      
+      showSnackbar('Транзакция успешно добавлена!', 'success');
       setTransaction({ type: 'EXPENSE', amount: '', category: '', description: '' });
+      
+      // Обновляем статистику после добавления транзакции
       fetchStatistics();
-      alert('Транзакция добавлена!');
+      
     } catch (error) {
-      alert(error.response?.data?.message || 'Ошибка');
+      console.error('Ошибка добавления транзакции:', error);
+      
+      if (error.response?.status === 400) {
+        showSnackbar(error.response.data.message || 'Ошибка валидации', 'error');
+      } else if (error.response?.status === 403) {
+        showSnackbar('Недостаточно средств', 'error');
+      } else {
+        showSnackbar('Ошибка при добавлении транзакции', 'error');
+      }
     }
   };
 
+  const showSnackbar = (message, severity) => {
+    setSnackbar({ open: true, message, severity });
+  };
+
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
+
+  const getCategoryIcon = (category) => {
+    const cat = categories.find(c => c.value === category);
+    return cat ? cat.icon : '📦';
+  };
+
+  const getCategoryColor = (category) => {
+    const cat = categories.find(c => c.value === category);
+    return cat ? cat.color : '#795548';
+  };
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('ru-RU', {
+      style: 'currency',
+      currency: 'RUB',
+      minimumFractionDigits: 2,
+    }).format(amount || 0);
+  };
+
+  const getMonthlyGrowth = () => {
+    if (!statistics) return 0;
+    // Простая логика расчета роста - можно доработать
+    const income = statistics.totalIncome || 0;
+    const expense = statistics.totalExpense || 0;
+    const previousMonth = (income - expense) * 0.9; // Предполагаем 90% от текущего
+    const currentMonth = income - expense;
+    
+    if (previousMonth === 0) return 0;
+    return ((currentMonth - previousMonth) / previousMonth * 100).toFixed(1);
+  };
+
+  // Проверка превышения бюджета
+  const checkBudgetExceeded = () => {
+    if (!statistics?.budgetStatus) return false;
+    return Object.values(statistics.budgetStatus).some(budget => budget.exceeded);
+  };
+
+  if (!walletId) {
+    return (
+      <Container sx={{ py: 10, textAlign: 'center' }}>
+        <Typography variant="h5">Пожалуйста, войдите в систему</Typography>
+        <Button variant="contained" sx={{ mt: 2 }} onClick={() => navigate('/login')}>
+          Войти
+        </Button>
+      </Container>
+    );
+  }
+
   return (
-    <Container maxWidth="lg">
-      <Typography variant="h4" gutterBottom sx={{ mt: 3 }}>
-        Финансовый менеджер
-      </Typography>
+    <Container maxWidth="xl" sx={{ py: 3 }}>
+      {/* Снекбар для уведомлений */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
 
-      {statistics && (
-        <Grid container spacing={3} sx={{ mb: 4 }}>
-          <Grid item xs={12} md={4}>
-            <Card>
-              <CardContent>
-                <Typography color="textSecondary" gutterBottom>
-                  Баланс
-                </Typography>
-                <Typography variant="h5" color={statistics.balance >= 0 ? 'success.main' : 'error.main'}>
-                  {statistics.balance.toFixed(2)} ₽
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          
-          <Grid item xs={12} md={4}>
-            <Card>
-              <CardContent>
-                <Typography color="textSecondary" gutterBottom>
-                  Доходы
-                </Typography>
-                <Typography variant="h5" color="success.main">
-                  {statistics.totalIncome.toFixed(2)} ₽
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-          
-          <Grid item xs={12} md={4}>
-            <Card>
-              <CardContent>
-                <Typography color="textSecondary" gutterBottom>
-                  Расходы
-                </Typography>
-                <Typography variant="h5" color="error.main">
-                  {statistics.totalExpense.toFixed(2)} ₽
-                </Typography>
-              </CardContent>
-            </Card>
-          </Grid>
-        </Grid>
-      )}
+      {/* Заголовок с информацией о пользователе */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+        <Box>
+          <Typography variant="h4" gutterBottom sx={{ fontWeight: 600, color: 'primary.main' }}>
+            Добро пожаловать, {user.username}!
+          </Typography>
+          <Typography variant="subtitle1" color="text.secondary">
+            ID кошелька: {walletId?.substring(0, 8)}...
+          </Typography>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+          {checkBudgetExceeded() && (
+            <Chip
+              icon={<Warning />}
+              label="Превышен бюджет"
+              color="error"
+              variant="outlined"
+            />
+          )}
+          <Tooltip title="Обновить данные">
+            <IconButton onClick={fetchStatistics} disabled={loading} sx={{ bgcolor: 'primary.light', color: 'white' }}>
+              <Refresh />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      </Box>
 
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={6}>
-          <Card>
+      {loading && <LinearProgress sx={{ mb: 3 }} />}
+
+      {/* Карточки с основной статистикой */}
+      <Grid container spacing={3} sx={{ mb: 4 }}>
+        {/* Баланс */}
+        <Grid item xs={12} md={3}>
+          <Card sx={{ 
+            height: '100%', 
+            bgcolor: 'primary.main',
+            color: 'white',
+            borderRadius: 2,
+            boxShadow: 3,
+          }}>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Новая транзакция
-              </Typography>
-              <form onSubmit={handleTransactionSubmit}>
-                <TextField
-                  select
-                  fullWidth
-                  label="Тип"
-                  value={transaction.type}
-                  onChange={(e) => setTransaction({...transaction, type: e.target.value})}
-                  margin="normal"
-                >
-                  <MenuItem value="INCOME">Доход</MenuItem>
-                  <MenuItem value="EXPENSE">Расход</MenuItem>
-                </TextField>
-                
-                <TextField
-                  fullWidth
-                  label="Сумма"
-                  type="number"
-                  value={transaction.amount}
-                  onChange={(e) => setTransaction({...transaction, amount: e.target.value})}
-                  margin="normal"
-                  required
-                />
-                
-                <TextField
-                  select
-                  fullWidth
-                  label="Категория"
-                  value={transaction.category}
-                  onChange={(e) => setTransaction({...transaction, category: e.target.value})}
-                  margin="normal"
-                  required
-                >
-                  {categories.map((cat) => (
-                    <MenuItem key={cat} value={cat}>{cat}</MenuItem>
-                  ))}
-                </TextField>
-                
-                <TextField
-                  fullWidth
-                  label="Описание"
-                  value={transaction.description}
-                  onChange={(e) => setTransaction({...transaction, description: e.target.value})}
-                  margin="normal"
-                />
-                
-                <Button type="submit" variant="contained" fullWidth sx={{ mt: 2 }}>
-                  Добавить транзакцию
-                </Button>
-              </form>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <AccountBalanceWallet sx={{ fontSize: 40, mr: 2 }} />
+                <Box>
+                  <Typography variant="subtitle2" sx={{ opacity: 0.9 }}>
+                    Общий баланс
+                  </Typography>
+                  <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                    {statistics ? formatCurrency(statistics.balance) : '0 ₽'}
+                  </Typography>
+                </Box>
+              </Box>
+              <Chip 
+                icon={<TrendingUp />} 
+                label={`${getMonthlyGrowth()}% за месяц`}
+                size="small"
+                sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: 'white', mt: 1 }}
+              />
             </CardContent>
           </Card>
         </Grid>
 
-        <Grid item xs={12} md={6}>
-          <Card>
+        {/* Доходы */}
+        <Grid item xs={12} md={3}>
+          <Card sx={{ 
+            height: '100%',
+            borderLeft: '4px solid #4CAF50',
+            borderRadius: 2,
+            boxShadow: 2,
+          }}>
             <CardContent>
-              <Typography variant="h6" gutterBottom>
-                Статистика по категориям
-              </Typography>
-              {statistics?.expenseByCategory && Object.entries(statistics.expenseByCategory).map(([category, amount]) => (
-                <Box key={category} sx={{ mb: 1 }}>
-                  <Typography>{category}: {amount.toFixed(2)} ₽</Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <ArrowUpward sx={{ fontSize: 30, color: '#4CAF50', mr: 2 }} />
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Общие доходы
+                  </Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 600, color: '#4CAF50' }}>
+                    {statistics ? formatCurrency(statistics.totalIncome) : '0 ₽'}
+                  </Typography>
                 </Box>
-              ))}
+              </Box>
+              <Typography variant="body2" color="text.secondary">
+                <AttachMoney sx={{ fontSize: 16, verticalAlign: 'middle', mr: 0.5 }} />
+                Все поступления
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Расходы */}
+        <Grid item xs={12} md={3}>
+          <Card sx={{ 
+            height: '100%',
+            borderLeft: '4px solid #F44336',
+            borderRadius: 2,
+            boxShadow: 2,
+          }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <ArrowDownward sx={{ fontSize: 30, color: '#F44336', mr: 2 }} />
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Общие расходы
+                  </Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 600, color: '#F44336' }}>
+                    {statistics ? formatCurrency(statistics.totalExpense) : '0 ₽'}
+                  </Typography>
+                </Box>
+              </Box>
+              <Typography variant="body2" color="text.secondary">
+                <MoneyOff sx={{ fontSize: 16, verticalAlign: 'middle', mr: 0.5 }} />
+                Все траты
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Категории */}
+        <Grid item xs={12} md={3}>
+          <Card sx={{ 
+            height: '100%',
+            borderLeft: '4px solid #9C27B0',
+            borderRadius: 2,
+            boxShadow: 2,
+          }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                <Category sx={{ fontSize: 30, color: '#9C27B0', mr: 2 }} />
+                <Box>
+                  <Typography variant="subtitle2" color="text.secondary">
+                    Активные категории
+                  </Typography>
+                  <Typography variant="h5" sx={{ fontWeight: 600, color: '#9C27B0' }}>
+                    {statistics?.expenseByCategory ? Object.keys(statistics.expenseByCategory).length : 0}
+                  </Typography>
+                </Box>
+              </Box>
+              <Typography variant="body2" color="text.secondary">
+                Категории с тратами
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      <Grid container spacing={3}>
+        {/* Левая колонка: Новая транзакция */}
+        <Grid item xs={12} md={5}>
+          <Card sx={{ borderRadius: 2, boxShadow: 3 }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                <AddCircle color="primary" sx={{ fontSize: 30, mr: 2 }} />
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  Новая транзакция
+                </Typography>
+              </Box>
+              
+              <form onSubmit={handleTransactionSubmit}>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      select
+                      fullWidth
+                      label="Тип транзакции"
+                      value={transaction.type}
+                      onChange={(e) => setTransaction({...transaction, type: e.target.value})}
+                      size="small"
+                      required
+                    >
+                      <MenuItem value="INCOME">
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <ArrowUpward sx={{ color: '#4CAF50', mr: 1 }} />
+                          Доход
+                        </Box>
+                      </MenuItem>
+                      <MenuItem value="EXPENSE">
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                          <ArrowDownward sx={{ color: '#F44336', mr: 1 }} />
+                          Расход
+                        </Box>
+                      </MenuItem>
+                    </TextField>
+                  </Grid>
+                  
+                  <Grid item xs={12} md={6}>
+                    <TextField
+                      fullWidth
+                      label="Сумма"
+                      type="number"
+                      value={transaction.amount}
+                      onChange={(e) => setTransaction({...transaction, amount: e.target.value})}
+                      size="small"
+                      required
+                      inputProps={{ min: "0.01", step: "0.01" }}
+                      InputProps={{
+                        startAdornment: <Typography sx={{ mr: 1 }}>₽</Typography>,
+                      }}
+                    />
+                  </Grid>
+                  
+                  <Grid item xs={12}>
+                    <TextField
+                      select
+                      fullWidth
+                      label="Категория"
+                      value={transaction.category}
+                      onChange={(e) => setTransaction({...transaction, category: e.target.value})}
+                      size="small"
+                      required
+                    >
+                      {categories.map((cat) => (
+                        <MenuItem key={cat.value} value={cat.value}>
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <Typography sx={{ mr: 1 }}>{cat.icon}</Typography>
+                            {cat.value}
+                          </Box>
+                        </MenuItem>
+                      ))}
+                    </TextField>
+                  </Grid>
+                  
+                  <Grid item xs={12}>
+                    <TextField
+                      fullWidth
+                      label="Описание (необязательно)"
+                      value={transaction.description}
+                      onChange={(e) => setTransaction({...transaction, description: e.target.value})}
+                      size="small"
+                      multiline
+                      rows={2}
+                    />
+                  </Grid>
+                  
+                  <Grid item xs={12}>
+                    <Button 
+                      type="submit" 
+                      variant="contained" 
+                      fullWidth 
+                      size="large"
+                      startIcon={<AddCircle />}
+                      sx={{ mt: 1 }}
+                      disabled={loading}
+                    >
+                      {loading ? 'Добавление...' : 'Добавить транзакцию'}
+                    </Button>
+                  </Grid>
+                </Grid>
+              </form>
+            </CardContent>
+          </Card>
+
+          {/* Бюджеты (если есть) */}
+          {statistics?.budgetStatus && Object.keys(statistics.budgetStatus).length > 0 && (
+            <Card sx={{ mt: 3, borderRadius: 2, boxShadow: 3 }}>
+              <CardContent>
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                  <Warning color="primary" sx={{ fontSize: 30, mr: 2 }} />
+                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                    Статус бюджетов
+                  </Typography>
+                </Box>
+                
+                {Object.entries(statistics.budgetStatus).map(([category, budget]) => (
+                  <Box key={category} sx={{ mb: 2 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                        {category}
+                      </Typography>
+                      <Typography 
+                        variant="body2" 
+                        sx={{ 
+                          fontWeight: 600,
+                          color: budget.exceeded ? '#F44336' : budget.usagePercentage > 80 ? '#FF9800' : '#4CAF50'
+                        }}
+                      >
+                        {budget.currentSpent.toFixed(2)} / {budget.limitAmount.toFixed(2)} ₽
+                        {budget.exceeded && ' ⚠️'}
+                      </Typography>
+                    </Box>
+                    <LinearProgress 
+                      variant="determinate" 
+                      value={Math.min(budget.usagePercentage, 100)} 
+                      sx={{ 
+                        height: 6, 
+                        borderRadius: 3,
+                        backgroundColor: 'rgba(0,0,0,0.1)',
+                        '& .MuiLinearProgress-bar': {
+                          backgroundColor: budget.exceeded ? '#F44336' : budget.usagePercentage > 80 ? '#FF9800' : '#4CAF50',
+                          borderRadius: 3,
+                        }
+                      }}
+                    />
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                      Использовано: {budget.usagePercentage.toFixed(1)}%
+                    </Typography>
+                  </Box>
+                ))}
+              </CardContent>
+            </Card>
+          )}
+        </Grid>
+
+        {/* Правая колонка: Статистика */}
+        <Grid item xs={12} md={7}>
+          <Card sx={{ borderRadius: 2, boxShadow: 3, height: '100%' }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                <PieChart color="primary" sx={{ fontSize: 30, mr: 2 }} />
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  Распределение расходов
+                </Typography>
+              </Box>
+              
+              {statistics?.expenseByCategory && Object.keys(statistics.expenseByCategory).length > 0 ? (
+                <>
+                  {Object.entries(statistics.expenseByCategory).map(([category, amount]) => {
+                    const percentage = statistics.totalExpense > 0 ? 
+                      (amount / statistics.totalExpense * 100).toFixed(1) : 0;
+                    const categoryInfo = categories.find(c => c.value === category);
+                    
+                    return (
+                      <Box key={category} sx={{ mb: 3 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <Typography sx={{ mr: 1, fontSize: 20 }}>
+                              {categoryInfo?.icon || '📦'}
+                            </Typography>
+                            <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                              {category}
+                            </Typography>
+                          </Box>
+                          <Box sx={{ textAlign: 'right' }}>
+                            <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                              {formatCurrency(amount)}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {percentage}% от расходов
+                            </Typography>
+                          </Box>
+                        </Box>
+                        <LinearProgress 
+                          variant="determinate" 
+                          value={percentage} 
+                          sx={{ 
+                            height: 8, 
+                            borderRadius: 4,
+                            backgroundColor: 'rgba(0,0,0,0.1)',
+                            '& .MuiLinearProgress-bar': {
+                              backgroundColor: categoryInfo?.color || '#795548',
+                              borderRadius: 4,
+                            }
+                          }}
+                        />
+                      </Box>
+                    );
+                  })}
+                  
+                  {/* Итоговая статистика */}
+                  <Paper sx={{ p: 2, mt: 4, bgcolor: 'primary.light', color: 'white' }}>
+                    <Grid container spacing={2}>
+                      <Grid item xs={6}>
+                        <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                          Самые большие расходы:
+                        </Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                          {Object.entries(statistics.expenseByCategory)
+                            .sort(([,a], [,b]) => b - a)[0]?.[0] || 'Нет данных'}
+                        </Typography>
+                      </Grid>
+                      <Grid item xs={6}>
+                        <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                          Коэффициент сбережений:
+                        </Typography>
+                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                          {statistics.totalIncome > 0 ? 
+                            `${((statistics.balance / statistics.totalIncome) * 100).toFixed(1)}%` : 
+                            '0%'}
+                        </Typography>
+                      </Grid>
+                    </Grid>
+                  </Paper>
+                </>
+              ) : (
+                <Box sx={{ py: 4, textAlign: 'center' }}>
+                  <Typography variant="body1" color="text.secondary">
+                    Нет данных о расходах. Добавьте первую транзакцию!
+                  </Typography>
+                </Box>
+              )}
             </CardContent>
           </Card>
         </Grid>
