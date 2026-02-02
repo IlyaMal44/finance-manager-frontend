@@ -8,6 +8,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
+import Budget from './pages/Budget';
 
 // Компоненты
 import Header from './components/Layout/Header';
@@ -58,6 +59,7 @@ function App() {
             } 
           />
           <Route path="/" element={<Navigate to="/dashboard" />} />
+          <Route path="/budgets" element={<Budget />} />
         </Routes>
       </Router>
     </ThemeProvider>

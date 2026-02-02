@@ -12,18 +12,13 @@ import {
   TextField,
   MenuItem,
   Paper,
-  Divider,
   Chip,
   LinearProgress,
   IconButton,
   Tooltip,
-  Avatar,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemAvatar,
   Alert,
   Snackbar,
+  Collapse,
 } from '@mui/material';
 import {
   TrendingUp,
@@ -34,11 +29,13 @@ import {
   MoneyOff,
   PieChart,
   Category,
-  History,
   Refresh,
   ArrowUpward,
   ArrowDownward,
   Warning,
+  ExpandMore,
+  ExpandLess,
+  Settings,
 } from '@mui/icons-material';
 
 const Dashboard = () => {
@@ -46,7 +43,6 @@ const Dashboard = () => {
   const [user, setUser] = useState(JSON.parse(localStorage.getItem('user') || '{}'));
   const [statistics, setStatistics] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [recentTransactions, setRecentTransactions] = useState([]);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [transaction, setTransaction] = useState({
     type: 'EXPENSE',
@@ -54,23 +50,45 @@ const Dashboard = () => {
     category: '',
     description: '',
   });
+  const [categoriesExpanded, setCategoriesExpanded] = useState(false);
   
   const navigate = useNavigate();
   
-  const categories = [
+  // Раздельные категории для доходов и расходов
+  const incomeCategories = [
+    { value: 'Зарплата', icon: '💰', color: '#4CAF50' },
+    { value: 'Фриланс', icon: '💼', color: '#2196F3' },
+    { value: 'Инвестиции', icon: '📈', color: '#FF9800' },
+    { value: 'Подарок', icon: '🎁', color: '#9C27B0' },
+    { value: 'Возврат долга', icon: '💸', color: '#3F51B5' },
+    { value: 'Дивиденды', icon: '📊', color: '#00BCD4' },
+    { value: 'Стипендия', icon: '🎓', color: '#8BC34A' },
+    { value: 'Пенсия', icon: '👴', color: '#607D8B' },
+    { value: 'Другое (доход)', icon: '📦', color: '#795548' },
+  ];
+
+  const expenseCategories = [
     { value: 'Продукты', icon: '🛒', color: '#4CAF50' },
     { value: 'Транспорт', icon: '🚗', color: '#2196F3' },
     { value: 'Развлечения', icon: '🎬', color: '#9C27B0' },
     { value: 'Одежда', icon: '👕', color: '#FF9800' },
     { value: 'Здоровье', icon: '🏥', color: '#F44336' },
     { value: 'Образование', icon: '📚', color: '#3F51B5' },
-    { value: 'Другое', icon: '📦', color: '#795548' },
-    { value: 'Зарплата', icon: '💰', color: '#4CAF50' },
-    { value: 'Фриланс', icon: '💼', color: '#2196F3' },
-    { value: 'Инвестиции', icon: '📈', color: '#FF9800' },
-    { value: 'Подарок', icon: '🎁', color: '#9C27B0' },
+    { value: 'Жилье', icon: '🏠', color: '#795548' },
+    { value: 'Коммунальные', icon: '💡', color: '#FFC107' },
+    { value: 'Связь', icon: '📱', color: '#E91E63' },
     { value: 'Кредит', icon: '🏦', color: '#F44336' },
+    { value: 'Подарки', icon: '🎁', color: '#9C27B0' },
+    { value: 'Путешествия', icon: '✈️', color: '#00BCD4' },
+    { value: 'Красота', icon: '💄', color: '#E91E63' },
+    { value: 'Спорт', icon: '🏋️', color: '#4CAF50' },
+    { value: 'Другое (расход)', icon: '📦', color: '#9E9E9E' },
   ];
+
+  // Получаем текущие категории в зависимости от типа транзакции
+  const getCurrentCategories = () => {
+    return transaction.type === 'INCOME' ? incomeCategories : expenseCategories;
+  };
 
   const fetchStatistics = useCallback(async () => {
     if (!walletId) {
@@ -80,30 +98,12 @@ const Dashboard = () => {
     
     setLoading(true);
     try {
-      // Загружаем статистику с бэкенда
       const statsResponse = await api.get(`/finance/${walletId}/statistics`);
       setStatistics(statsResponse.data);
-      
-      // Для последних транзакций - нужно будет добавить endpoint в бэкенд
-      // Пока используем данные из статистики или делаем отдельный запрос
-      // Временное решение: используем бюджетный статус для отображения категорий
-      if (statsResponse.data.budgetStatus) {
-        const mockTransactions = Object.entries(statsResponse.data.budgetStatus).map(([category, status], index) => ({
-          id: index + 1,
-          type: 'EXPENSE',
-          amount: status.currentSpent,
-          category,
-          description: `Расходы по категории ${category}`,
-          date: new Date().toISOString().split('T')[0],
-        }));
-        setRecentTransactions(mockTransactions.slice(0, 4));
-      }
-      
     } catch (error) {
       console.error('Ошибка загрузки статистики:', error);
       showSnackbar('Ошибка загрузки данных', 'error');
       
-      // Если пользователь не авторизован
       if (error.response?.status === 401 || error.response?.status === 403) {
         localStorage.removeItem('user');
         localStorage.removeItem('walletId');
@@ -139,7 +139,6 @@ const Dashboard = () => {
       showSnackbar('Транзакция успешно добавлена!', 'success');
       setTransaction({ type: 'EXPENSE', amount: '', category: '', description: '' });
       
-      // Обновляем статистику после добавления транзакции
       fetchStatistics();
       
     } catch (error) {
@@ -164,12 +163,14 @@ const Dashboard = () => {
   };
 
   const getCategoryIcon = (category) => {
-    const cat = categories.find(c => c.value === category);
+    const allCategories = [...incomeCategories, ...expenseCategories];
+    const cat = allCategories.find(c => c.value === category);
     return cat ? cat.icon : '📦';
   };
 
   const getCategoryColor = (category) => {
-    const cat = categories.find(c => c.value === category);
+    const allCategories = [...incomeCategories, ...expenseCategories];
+    const cat = allCategories.find(c => c.value === category);
     return cat ? cat.color : '#795548';
   };
 
@@ -183,20 +184,27 @@ const Dashboard = () => {
 
   const getMonthlyGrowth = () => {
     if (!statistics) return 0;
-    // Простая логика расчета роста - можно доработать
     const income = statistics.totalIncome || 0;
     const expense = statistics.totalExpense || 0;
-    const previousMonth = (income - expense) * 0.9; // Предполагаем 90% от текущего
+    const previousMonth = (income - expense) * 0.9;
     const currentMonth = income - expense;
     
     if (previousMonth === 0) return 0;
     return ((currentMonth - previousMonth) / previousMonth * 100).toFixed(1);
   };
 
-  // Проверка превышения бюджета
   const checkBudgetExceeded = () => {
     if (!statistics?.budgetStatus) return false;
     return Object.values(statistics.budgetStatus).some(budget => budget.exceeded);
+  };
+
+  // При изменении типа транзакции сбрасываем категорию
+  const handleTypeChange = (type) => {
+    setTransaction({
+      ...transaction,
+      type: type,
+      category: '' // Сбрасываем категорию при смене типа
+    });
   };
 
   if (!walletId) {
@@ -212,7 +220,6 @@ const Dashboard = () => {
 
   return (
     <Container maxWidth="xl" sx={{ py: 3 }}>
-      {/* Снекбар для уведомлений */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
@@ -224,14 +231,14 @@ const Dashboard = () => {
         </Alert>
       </Snackbar>
 
-      {/* Заголовок с информацией о пользователе */}
+      {/* Заголовок с информацией о пользователе - БЕЗ ID кошелька */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
         <Box>
           <Typography variant="h4" gutterBottom sx={{ fontWeight: 600, color: 'primary.main' }}>
             Добро пожаловать, {user.username}!
           </Typography>
           <Typography variant="subtitle1" color="text.secondary">
-            ID кошелька: {walletId?.substring(0, 8)}...
+            Управляйте вашими финансами эффективно
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
@@ -253,9 +260,7 @@ const Dashboard = () => {
 
       {loading && <LinearProgress sx={{ mb: 3 }} />}
 
-      {/* Карточки с основной статистикой */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        {/* Баланс */}
         <Grid item xs={12} md={3}>
           <Card sx={{ 
             height: '100%', 
@@ -271,7 +276,7 @@ const Dashboard = () => {
                   <Typography variant="subtitle2" sx={{ opacity: 0.9 }}>
                     Общий баланс
                   </Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 700 }}>
+                  <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '1.8rem' }}>
                     {statistics ? formatCurrency(statistics.balance) : '0 ₽'}
                   </Typography>
                 </Box>
@@ -286,7 +291,6 @@ const Dashboard = () => {
           </Card>
         </Grid>
 
-        {/* Доходы */}
         <Grid item xs={12} md={3}>
           <Card sx={{ 
             height: '100%',
@@ -301,7 +305,7 @@ const Dashboard = () => {
                   <Typography variant="subtitle2" color="text.secondary">
                     Общие доходы
                   </Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 600, color: '#4CAF50' }}>
+                  <Typography variant="h5" sx={{ fontWeight: 600, color: '#4CAF50', fontSize: '1.5rem' }}>
                     {statistics ? formatCurrency(statistics.totalIncome) : '0 ₽'}
                   </Typography>
                 </Box>
@@ -314,7 +318,6 @@ const Dashboard = () => {
           </Card>
         </Grid>
 
-        {/* Расходы */}
         <Grid item xs={12} md={3}>
           <Card sx={{ 
             height: '100%',
@@ -329,7 +332,7 @@ const Dashboard = () => {
                   <Typography variant="subtitle2" color="text.secondary">
                     Общие расходы
                   </Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 600, color: '#F44336' }}>
+                  <Typography variant="h5" sx={{ fontWeight: 600, color: '#F44336', fontSize: '1.5rem' }}>
                     {statistics ? formatCurrency(statistics.totalExpense) : '0 ₽'}
                   </Typography>
                 </Box>
@@ -342,7 +345,6 @@ const Dashboard = () => {
           </Card>
         </Grid>
 
-        {/* Категории */}
         <Grid item xs={12} md={3}>
           <Card sx={{ 
             height: '100%',
@@ -357,7 +359,7 @@ const Dashboard = () => {
                   <Typography variant="subtitle2" color="text.secondary">
                     Активные категории
                   </Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 600, color: '#9C27B0' }}>
+                  <Typography variant="h5" sx={{ fontWeight: 600, color: '#9C27B0', fontSize: '1.5rem' }}>
                     {statistics?.expenseByCategory ? Object.keys(statistics.expenseByCategory).length : 0}
                   </Typography>
                 </Box>
@@ -390,7 +392,7 @@ const Dashboard = () => {
                       fullWidth
                       label="Тип транзакции"
                       value={transaction.type}
-                      onChange={(e) => setTransaction({...transaction, type: e.target.value})}
+                      onChange={(e) => handleTypeChange(e.target.value)}
                       size="small"
                       required
                     >
@@ -426,19 +428,86 @@ const Dashboard = () => {
                   </Grid>
                   
                   <Grid item xs={12}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
+                      <Typography variant="subtitle2" color="text.secondary">
+                        {transaction.type === 'INCOME' ? 'Категории доходов' : 'Категории расходов'}
+                      </Typography>
+                      <IconButton 
+                        size="small" 
+                        onClick={() => setCategoriesExpanded(!categoriesExpanded)}
+                        sx={{ ml: 1 }}
+                      >
+                        {categoriesExpanded ? <ExpandLess /> : <ExpandMore />}
+                      </IconButton>
+                    </Box>
+                    
+                    <Collapse in={categoriesExpanded}>
+                      <Box sx={{ 
+                        mb: 2, 
+                        p: 2, 
+                        bgcolor: 'grey.50', 
+                        borderRadius: 1,
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        maxHeight: '200px',
+                        overflowY: 'auto'
+                      }}>
+                        <Grid container spacing={1}>
+                          {getCurrentCategories().map((cat) => (
+                            <Grid item xs={6} sm={4} key={cat.value}>
+                              <Button
+                                fullWidth
+                                variant={transaction.category === cat.value ? "contained" : "outlined"}
+                                onClick={() => {
+                                  setTransaction({...transaction, category: cat.value});
+                                  setCategoriesExpanded(false);
+                                }}
+                                size="small"
+                                sx={{ 
+                                  justifyContent: 'flex-start',
+                                  textTransform: 'none',
+                                  mb: 0.5,
+                                  backgroundColor: transaction.category === cat.value ? cat.color : 'transparent',
+                                  color: transaction.category === cat.value ? 'white' : 'text.primary',
+                                  '&:hover': {
+                                    backgroundColor: transaction.category === cat.value ? cat.color : 'action.hover'
+                                  }
+                                }}
+                              >
+                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                                  <Typography sx={{ mr: 1, fontSize: '1.2rem' }}>
+                                    {cat.icon}
+                                  </Typography>
+                                  <Typography variant="body2" noWrap>
+                                    {cat.value}
+                                  </Typography>
+                                </Box>
+                              </Button>
+                            </Grid>
+                          ))}
+                        </Grid>
+                      </Box>
+                    </Collapse>
+                    
                     <TextField
                       select
                       fullWidth
-                      label="Категория"
+                      label="Выберите категорию"
                       value={transaction.category}
                       onChange={(e) => setTransaction({...transaction, category: e.target.value})}
                       size="small"
                       required
+                      sx={{ mt: 1 }}
                     >
-                      {categories.map((cat) => (
+                      <MenuItem value="">
+                        <em>Выберите категорию</em>
+                      </MenuItem>
+                      {getCurrentCategories().map((cat) => (
                         <MenuItem key={cat.value} value={cat.value}>
                           <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <Typography sx={{ mr: 1 }}>{cat.icon}</Typography>
+                            <Typography sx={{ mr: 1, fontSize: '1.2rem' }}>
+                              {cat.icon}
+                            </Typography>
                             {cat.value}
                           </Box>
                         </MenuItem>
@@ -476,15 +545,25 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Бюджеты (если есть) */}
+          {/* Бюджеты (если есть) - ОБНОВЛЕННЫЙ КОД */}
           {statistics?.budgetStatus && Object.keys(statistics.budgetStatus).length > 0 && (
             <Card sx={{ mt: 3, borderRadius: 2, boxShadow: 3 }}>
               <CardContent>
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                  <Warning color="primary" sx={{ fontSize: 30, mr: 2 }} />
-                  <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    Статус бюджетов
-                  </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                    <Warning color="primary" sx={{ fontSize: 30, mr: 2 }} />
+                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                      Статус бюджетов
+                    </Typography>
+                  </Box>
+                  <Button 
+                    size="small" 
+                    variant="outlined"
+                    onClick={() => navigate('/budgets')}
+                    startIcon={<Settings />}
+                  >
+                    Управление
+                  </Button>
                 </Box>
                 
                 {Object.entries(statistics.budgetStatus).map(([category, budget]) => (
@@ -539,25 +618,25 @@ const Dashboard = () => {
               </Box>
               
               {statistics?.expenseByCategory && Object.keys(statistics.expenseByCategory).length > 0 ? (
-                <>
+                <Box sx={{ maxHeight: '500px', overflowY: 'auto', pr: 1 }}>
                   {Object.entries(statistics.expenseByCategory).map(([category, amount]) => {
                     const percentage = statistics.totalExpense > 0 ? 
                       (amount / statistics.totalExpense * 100).toFixed(1) : 0;
-                    const categoryInfo = categories.find(c => c.value === category);
+                    const categoryInfo = expenseCategories.find(c => c.value === category);
                     
                     return (
-                      <Box key={category} sx={{ mb: 3 }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                      <Box key={category} sx={{ mb: 2 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
                           <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <Typography sx={{ mr: 1, fontSize: 20 }}>
+                            <Typography sx={{ mr: 1, fontSize: 18 }}>
                               {categoryInfo?.icon || '📦'}
                             </Typography>
-                            <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                            <Typography variant="body2" sx={{ fontWeight: 500 }}>
                               {category}
                             </Typography>
                           </Box>
                           <Box sx={{ textAlign: 'right' }}>
-                            <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
                               {formatCurrency(amount)}
                             </Typography>
                             <Typography variant="caption" color="text.secondary">
@@ -569,50 +648,52 @@ const Dashboard = () => {
                           variant="determinate" 
                           value={percentage} 
                           sx={{ 
-                            height: 8, 
-                            borderRadius: 4,
+                            height: 6, 
+                            borderRadius: 3,
                             backgroundColor: 'rgba(0,0,0,0.1)',
                             '& .MuiLinearProgress-bar': {
                               backgroundColor: categoryInfo?.color || '#795548',
-                              borderRadius: 4,
+                              borderRadius: 3,
                             }
                           }}
                         />
                       </Box>
                     );
                   })}
-                  
-                  {/* Итоговая статистика */}
-                  <Paper sx={{ p: 2, mt: 4, bgcolor: 'primary.light', color: 'white' }}>
-                    <Grid container spacing={2}>
-                      <Grid item xs={6}>
-                        <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                          Самые большие расходы:
-                        </Typography>
-                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                          {Object.entries(statistics.expenseByCategory)
-                            .sort(([,a], [,b]) => b - a)[0]?.[0] || 'Нет данных'}
-                        </Typography>
-                      </Grid>
-                      <Grid item xs={6}>
-                        <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                          Коэффициент сбережений:
-                        </Typography>
-                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                          {statistics.totalIncome > 0 ? 
-                            `${((statistics.balance / statistics.totalIncome) * 100).toFixed(1)}%` : 
-                            '0%'}
-                        </Typography>
-                      </Grid>
-                    </Grid>
-                  </Paper>
-                </>
+                </Box>
               ) : (
                 <Box sx={{ py: 4, textAlign: 'center' }}>
                   <Typography variant="body1" color="text.secondary">
                     Нет данных о расходах. Добавьте первую транзакцию!
                   </Typography>
                 </Box>
+              )}
+              
+              {/* Итоговая статистика */}
+              {statistics && statistics.expenseByCategory && Object.keys(statistics.expenseByCategory).length > 0 && (
+                <Paper sx={{ p: 2, mt: 3, bgcolor: 'primary.light', color: 'white' }}>
+                  <Grid container spacing={2}>
+                    <Grid item xs={6}>
+                      <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '0.8rem' }}>
+                        Самые большие расходы:
+                      </Typography>
+                      <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1rem' }}>
+                        {Object.entries(statistics.expenseByCategory)
+                          .sort(([,a], [,b]) => b - a)[0]?.[0] || 'Нет данных'}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={6}>
+                      <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '0.8rem' }}>
+                        Коэффициент сбережений:
+                      </Typography>
+                      <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1rem' }}>
+                        {statistics.totalIncome > 0 ? 
+                          `${((statistics.balance / statistics.totalIncome) * 100).toFixed(1)}%` : 
+                          '0%'}
+                      </Typography>
+                    </Grid>
+                  </Grid>
+                </Paper>
               )}
             </CardContent>
           </Card>

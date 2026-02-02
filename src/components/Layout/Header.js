@@ -30,6 +30,9 @@ const Header = () => {
           <Button color="inherit" onClick={handleLogout}>
             Выйти
           </Button>
+          <Button color="inherit" onClick={() => navigate('/budgets')}>
+            Бюджеты
+          </Button>
         </Box>
       </Toolbar>
     </AppBar>
