@@ -21,6 +21,9 @@ const Header = () => {
           Finance Manager | {user.username}
         </Typography>
         <Box>
+           <Button color="inherit" onClick={() => navigate('/budgets')}>
+            Бюджеты
+          </Button>
           <Button color="inherit" onClick={() => navigate('/dashboard')}>
             Дашборд
           </Button>
@@ -29,9 +32,6 @@ const Header = () => {
           </Button>
           <Button color="inherit" onClick={handleLogout}>
             Выйти
-          </Button>
-          <Button color="inherit" onClick={() => navigate('/budgets')}>
-            Бюджеты
           </Button>
         </Box>
       </Toolbar>

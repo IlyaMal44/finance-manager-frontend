@@ -43,6 +43,7 @@ import {
   Refresh,
   AttachMoney,
   MoneyOff,
+  ArrowBack,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axiosConfig';
@@ -276,7 +277,7 @@ const Budget = () => {
         </Alert>
       </Snackbar>
 
-      {/* Заголовок */}
+      {/* Заголовок и управление */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
         <Box>
           <Typography variant="h4" gutterBottom sx={{ fontWeight: 600, color: 'primary.main' }}>
@@ -292,6 +293,13 @@ const Budget = () => {
               <Refresh />
             </IconButton>
           </Tooltip>
+          <Button 
+            variant="outlined" 
+            startIcon={<ArrowBack />}
+            onClick={() => navigate('/dashboard')}
+          >
+            Назад к дашборду
+          </Button>
           <Button
             variant="contained"
             startIcon={<Add />}
