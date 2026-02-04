@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
@@ -13,28 +13,45 @@ import Budget from './pages/Budget';
 // Компоненты
 import Header from './components/Layout/Header';
 
-const theme = createTheme({
-  palette: {
-    primary: {
-      main: '#1976d2',
-    },
-    secondary: {
-      main: '#dc004e',
-    },
-  },
-});
-
-const PrivateRoute = ({ children }) => {
-  const user = localStorage.getItem('user');
-  return user ? (
-    <>
-      <Header />
-      {children}
-    </>
-  ) : <Navigate to="/login" />;
-};
-
 function App() {
+  const [mode, setMode] = useState(() => localStorage.getItem('themeMode') || 'light');
+
+  useEffect(() => {
+    localStorage.setItem('themeMode', mode);
+  }, [mode]);
+
+  const toggleMode = useCallback(() => {
+    setMode((prev) => (prev === 'light' ? 'dark' : 'light'));
+  }, []);
+
+  const theme = useMemo(
+    () =>
+      createTheme({
+        palette: {
+          mode,
+          primary: {
+            main: '#1976d2',
+          },
+          secondary: {
+            main: '#dc004e',
+          },
+        },
+      }),
+    [mode],
+  );
+
+  const PrivateRoute = ({ children }) => {
+    const user = localStorage.getItem('user');
+    return user ? (
+      <>
+        <Header mode={mode} toggleMode={toggleMode} />
+        {children}
+      </>
+    ) : (
+      <Navigate to="/login" />
+    );
+  };
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -42,21 +59,21 @@ function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route 
-            path="/dashboard" 
+          <Route
+            path="/dashboard"
             element={
               <PrivateRoute>
                 <Dashboard />
               </PrivateRoute>
-            } 
+            }
           />
-          <Route 
-            path="/transactions" 
+          <Route
+            path="/transactions"
             element={
               <PrivateRoute>
                 <Transactions />
               </PrivateRoute>
-            } 
+            }
           />
           <Route path="/" element={<Navigate to="/dashboard" />} />
           <Route path="/budgets" element={<Budget />} />

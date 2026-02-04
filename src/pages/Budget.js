@@ -348,7 +348,16 @@ const Budget = () => {
               </Grid>
               
               {statistics && (
-                <Box sx={{ mt: 2, p: 2, bgcolor: 'grey.50', borderRadius: 1 }}>
+                <Box
+                  sx={{
+                    mt: 2,
+                    p: 2,
+                    bgcolor: 'action.hover',
+                    borderRadius: 1,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                  }}
+                >
                   <Typography variant="body2" color="text.secondary" gutterBottom>
                     Общие расходы: {formatCurrency(statistics.totalExpense || 0)}
                   </Typography>

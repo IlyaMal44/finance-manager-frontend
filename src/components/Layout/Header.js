@@ -1,8 +1,9 @@
 import React from 'react';
-import { AppBar, Toolbar, Typography, Button, Box } from '@mui/material';
+import { AppBar, Toolbar, Typography, Button, Box, IconButton, Tooltip } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
+import { DarkMode, LightMode } from '@mui/icons-material';
 
-const Header = () => {
+const Header = ({ mode, toggleMode }) => {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem('user'));
 
@@ -20,7 +21,12 @@ const Header = () => {
         <Typography variant="h6" sx={{ flexGrow: 1 }}>
           Finance Manager | {user.username}
         </Typography>
-        <Box>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Tooltip title={mode === 'dark' ? 'Светлая тема' : 'Тёмная тема'}>
+            <IconButton color="inherit" onClick={toggleMode}>
+              {mode === 'dark' ? <LightMode /> : <DarkMode />}
+            </IconButton>
+          </Tooltip>
            <Button color="inherit" onClick={() => navigate('/budgets')}>
             Бюджеты
           </Button>
