@@ -18,7 +18,6 @@ import {
   Tooltip,
   Alert,
   Snackbar,
-  Collapse,
 } from '@mui/material';
 import {
   TrendingUp,
@@ -33,8 +32,6 @@ import {
   ArrowUpward,
   ArrowDownward,
   Warning,
-  ExpandMore,
-  ExpandLess,
   Settings,
 } from '@mui/icons-material';
 
@@ -50,7 +47,6 @@ const Dashboard = () => {
     category: '',
     description: '',
   });
-  const [categoriesExpanded, setCategoriesExpanded] = useState(false);
   
   const navigate = useNavigate();
   
@@ -375,7 +371,7 @@ const Dashboard = () => {
       <Grid container spacing={3}>
         {/* Левая колонка: Новая транзакция */}
         <Grid item xs={12} md={5}>
-          <Card sx={{ borderRadius: 2, boxShadow: 3 }}>
+          <Card sx={{ borderRadius: 2, boxShadow: 3, overflow: 'visible' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
                 <AddCircle color="primary" sx={{ fontSize: 30, mr: 2 }} />
@@ -428,76 +424,14 @@ const Dashboard = () => {
                   </Grid>
                   
                   <Grid item xs={12}>
-                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                      <Typography variant="subtitle2" color="text.secondary">
-                        {transaction.type === 'INCOME' ? 'Категории доходов' : 'Категории расходов'}
-                      </Typography>
-                      <IconButton 
-                        size="small" 
-                        onClick={() => setCategoriesExpanded(!categoriesExpanded)}
-                        sx={{ ml: 1 }}
-                      >
-                        {categoriesExpanded ? <ExpandLess /> : <ExpandMore />}
-                      </IconButton>
-                    </Box>
-                    
-                    <Collapse in={categoriesExpanded}>
-                      <Box sx={{ 
-                        mb: 2, 
-                        p: 2, 
-                        bgcolor: 'grey.50', 
-                        borderRadius: 1,
-                        border: '1px solid',
-                        borderColor: 'divider',
-                        maxHeight: '200px',
-                        overflowY: 'auto'
-                      }}>
-                        <Grid container spacing={1}>
-                          {getCurrentCategories().map((cat) => (
-                            <Grid item xs={6} sm={4} key={cat.value}>
-                              <Button
-                                fullWidth
-                                variant={transaction.category === cat.value ? "contained" : "outlined"}
-                                onClick={() => {
-                                  setTransaction({...transaction, category: cat.value});
-                                  setCategoriesExpanded(false);
-                                }}
-                                size="small"
-                                sx={{ 
-                                  justifyContent: 'flex-start',
-                                  textTransform: 'none',
-                                  mb: 0.5,
-                                  backgroundColor: transaction.category === cat.value ? cat.color : 'transparent',
-                                  color: transaction.category === cat.value ? 'white' : 'text.primary',
-                                  '&:hover': {
-                                    backgroundColor: transaction.category === cat.value ? cat.color : 'action.hover'
-                                  }
-                                }}
-                              >
-                                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                                  <Typography sx={{ mr: 1, fontSize: '1.2rem' }}>
-                                    {cat.icon}
-                                  </Typography>
-                                  <Typography variant="body2" noWrap>
-                                    {cat.value}
-                                  </Typography>
-                                </Box>
-                              </Button>
-                            </Grid>
-                          ))}
-                        </Grid>
-                      </Box>
-                    </Collapse>
-                    
                     <TextField
                       select
                       fullWidth
-                      label="Выберите категорию"
+                      label="Категория"
                       value={transaction.category}
                       onChange={(e) => setTransaction({...transaction, category: e.target.value})}
                       size="small"
                       required
-                      sx={{ mt: 1 }}
                     >
                       <MenuItem value="">
                         <em>Выберите категорию</em>
