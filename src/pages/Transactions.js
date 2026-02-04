@@ -218,7 +218,7 @@ const Transactions = () => {
       {/* Фильтры - показываем только если есть транзакции */}
       {transactions.length > 0 && (
         <Paper sx={{ p: 2, mb: 3 }}>
-          <Grid container spacing={2} alignItems="flex-start">
+          <Grid container spacing={2} alignItems="center">
             <Grid item xs={12} md={4}>
               <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
                 Тип транзакции
@@ -257,28 +257,23 @@ const Transactions = () => {
               </TextField>
             </Grid>
             <Grid item xs={12} md={4}>
-              <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button
-                  variant="outlined"
-                  onClick={() => {
-                    setFilterType('ALL');
-                    setFilterCategory('');
-                  }}
-                >
-                  Сбросить фильтры
-                </Button>
-              </Box>
+              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5, opacity: 0 }}>
+                &nbsp;
+              </Typography>
+              <Button
+                variant="outlined"
+                fullWidth
+                onClick={() => {
+                  setFilterType('ALL');
+                  setFilterCategory('');
+                }}
+                sx={{ height: '40px' }}
+              >
+                Сбросить фильтры
+              </Button>
             </Grid>
           </Grid>
         </Paper>
-      )}
-
-      {loading && <LinearProgress sx={{ mb: 2 }} />}
-
-      {error && (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {error}
-        </Alert>
       )}
 
       {/* Таблица транзакций */}
