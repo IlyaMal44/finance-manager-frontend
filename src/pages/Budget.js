@@ -24,10 +24,8 @@ import {
   TableHead,
   TableRow,
   Paper,
-  FormControl,
-  InputLabel,
-  Select,
   MenuItem,
+  Autocomplete,
   Tooltip,
   Divider,
 } from '@mui/material';
@@ -123,11 +121,23 @@ const Budget = () => {
 
       if (editingBudget) {
         // Обновление существующего бюджета
-        const response = await api.post(`/finance/${walletId}/budget`, budgetData);
-        showSnackbar(`Бюджет для "${newBudget.category}" обновлен!`, 'success');
+        // Если категория изменилась — "переименовываем": удаляем старый бюджет и создаём новый
+        if (editingBudget.category && editingBudget.category !== newBudget.category) {
+          await api.delete(`/finance/${walletId}/budget`, {
+            params: { category: editingBudget.category }
+          });
+          await api.post(`/finance/${walletId}/budget`, budgetData);
+          showSnackbar(
+            `Бюджет изменен: "${editingBudget.category}" → "${newBudget.category}"`,
+            'success',
+          );
+        } else {
+          await api.post(`/finance/${walletId}/budget`, budgetData);
+          showSnackbar(`Бюджет для "${newBudget.category}" обновлен!`, 'success');
+        }
       } else {
         // Создание нового бюджета
-        const response = await api.post(`/finance/${walletId}/budget`, budgetData);
+        await api.post(`/finance/${walletId}/budget`, budgetData);
         showSnackbar(`Бюджет для "${newBudget.category}" установлен!`, 'success');
       }
 
@@ -263,6 +273,14 @@ const Budget = () => {
   const availableCategories = categories.filter(cat => 
     !budgets.some(b => b.category === cat)
   );
+  const categoryAlreadyExists =
+    !!newBudget.category &&
+    budgets.some((b) => b.category === newBudget.category) &&
+    (!editingBudget || newBudget.category !== editingBudget.category);
+
+  const categoryOptions = editingBudget
+    ? [editingBudget.category, ...availableCategories]
+    : availableCategories;
 
   return (
     <Container maxWidth="xl" sx={{ py: 3 }}>
@@ -563,25 +581,33 @@ const Budget = () => {
         </DialogTitle>
         <DialogContent>
           <Box sx={{ pt: 2 }}>
-            <FormControl fullWidth sx={{ mb: 3 }}>
-              <InputLabel>Категория</InputLabel>
-              <Select
-                value={newBudget.category}
-                onChange={(e) => setNewBudget({ ...newBudget, category: e.target.value })}
-                label="Категория"
-                disabled={!!editingBudget}
-              >
-                <MenuItem value="">
-                  <em>Выберите категорию</em>
-                </MenuItem>
-                {(editingBudget ? [editingBudget.category, ...availableCategories] : availableCategories)
-                  .map((category) => (
-                    <MenuItem key={category} value={category}>
-                      {category}
-                    </MenuItem>
-                  ))}
-              </Select>
-            </FormControl>
+            <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
+              Категория
+            </Typography>
+            <Autocomplete
+              freeSolo
+              options={categoryOptions}
+              value={newBudget.category || null}
+              onChange={(e, newValue) =>
+                setNewBudget({ ...newBudget, category: newValue || '' })
+              }
+              onInputChange={(e, inputValue) =>
+                setNewBudget((prev) => ({ ...prev, category: inputValue || '' }))
+              }
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  placeholder="Выберите или введите свою категорию"
+                  sx={{ mb: 3 }}
+                  error={categoryAlreadyExists}
+                  helperText={
+                    categoryAlreadyExists
+                      ? 'Бюджет для этой категории уже существует'
+                      : 'Нет нужной категории? Просто начните вводить — она сохранится.'
+                  }
+                />
+              )}
+            />
 
             <TextField
               fullWidth
@@ -607,7 +633,7 @@ const Budget = () => {
           <Button 
             onClick={handleSetBudget} 
             variant="contained"
-            disabled={!newBudget.category || !newBudget.limitAmount}
+            disabled={!newBudget.category || !newBudget.limitAmount || categoryAlreadyExists}
           >
             {editingBudget ? 'Обновить' : 'Создать'}
           </Button>
