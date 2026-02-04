@@ -49,13 +49,26 @@ const Transactions = () => {
   const [editTransaction, setEditTransaction] = useState(null);
   const navigate = useNavigate();
 
-  const categories = [
+  // Раздельные категории для доходов и расходов
+  const incomeCategories = [
+    'Зарплата', 'Фриланс', 'Инвестиции', 'Подарок', 'Возврат долга', 'Дивиденды', 'Стипендия', 'Пенсия', 'Другое (доход)',
+  ];
+
+  const expenseCategories = [
     'Продукты', 'Транспорт', 'Развлечения', 'Одежда',
     'Здоровье', 'Образование', 'Жилье', 'Коммунальные',
     'Связь', 'Кредит', 'Подарки', 'Путешествия',
-    'Красота', 'Спорт', 'Другое',
-    'Зарплата', 'Фриланс', 'Инвестиции', 'Подарок', 'Возврат долга', 'Дивиденды', 'Стипендия', 'Пенсия',
+    'Красота', 'Спорт', 'Другое (расход)',
   ];
+
+  // Все категории для фильтров (объединённый список)
+  const categories = [...incomeCategories, ...expenseCategories];
+
+  // Получаем текущие категории в зависимости от типа транзакции (для редактирования)
+  const getCurrentCategoriesForEdit = () => {
+    if (!editTransaction) return [];
+    return editTransaction.type === 'INCOME' ? incomeCategories : expenseCategories;
+  };
 
   useEffect(() => {
     if (walletId) {
@@ -551,25 +564,39 @@ const Transactions = () => {
                   <Box sx={{ mt: 2 }}>
                     <Grid container spacing={2}>
                       <Grid item xs={12} sm={6}>
+                        <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
+                          Тип транзакции
+                        </Typography>
                         <TextField
                           select
                           fullWidth
                           size="small"
-                          label="Тип транзакции"
+                          label=""
                           value={editTransaction.type}
-                          onChange={(e) =>
-                            setEditTransaction({ ...editTransaction, type: e.target.value })
-                          }
+                          onChange={(e) => {
+                            const newType = e.target.value;
+                            const newCategories = newType === 'INCOME' ? incomeCategories : expenseCategories;
+                            // Сбрасываем категорию, если она не подходит для нового типа
+                            const shouldResetCategory = !newCategories.includes(editTransaction.category);
+                            setEditTransaction({
+                              ...editTransaction,
+                              type: newType,
+                              category: shouldResetCategory ? '' : editTransaction.category,
+                            });
+                          }}
                         >
                           <MenuItem value="INCOME">Доход</MenuItem>
                           <MenuItem value="EXPENSE">Расход</MenuItem>
                         </TextField>
                       </Grid>
                       <Grid item xs={12} sm={6}>
+                        <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
+                          Сумма
+                        </Typography>
                         <TextField
                           fullWidth
                           size="small"
-                          label="Сумма"
+                          label=""
                           type="number"
                           value={editTransaction.amount}
                           onChange={(e) =>
@@ -578,17 +605,20 @@ const Transactions = () => {
                         />
                       </Grid>
                       <Grid item xs={12}>
+                        <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
+                          Категория
+                        </Typography>
                         <TextField
                           select
                           fullWidth
                           size="small"
-                          label="Категория"
+                          label=""
                           value={editTransaction.category || ''}
                           onChange={(e) =>
                             setEditTransaction({ ...editTransaction, category: e.target.value })
                           }
                         >
-                          {categories.map((category) => (
+                          {getCurrentCategoriesForEdit().map((category) => (
                             <MenuItem key={category} value={category}>
                               {category}
                             </MenuItem>
@@ -596,10 +626,13 @@ const Transactions = () => {
                         </TextField>
                       </Grid>
                       <Grid item xs={12}>
+                        <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
+                          Описание (необязательно)
+                        </Typography>
                         <TextField
                           fullWidth
                           size="small"
-                          label="Описание (необязательно)"
+                          label=""
                           multiline
                           rows={2}
                           value={editTransaction.description || ''}
