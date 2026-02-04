@@ -683,38 +683,40 @@ const Dashboard = () => {
                       </Typography>
                     </Box>
                   )}
-                  
-                  {/* Итоговая статистика по накоплениям */}
-                  {statistics && (
-                    <Paper sx={{ p: 2, mt: 3, bgcolor: 'primary.light', color: 'white' }}>
-                      <Grid container spacing={2}>
-                        <Grid item xs={6}>
-                          <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '0.8rem' }}>
-                            Самые большие расходы:
-                          </Typography>
-                          <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1rem' }}>
-                            {statistics.expenseByCategory && Object.keys(statistics.expenseByCategory).length > 0
-                              ? Object.entries(statistics.expenseByCategory)
-                                  .sort(([,a], [,b]) => b - a)[0]?.[0]
-                              : 'Нет данных'}
-                          </Typography>
-                        </Grid>
-                        <Grid item xs={6}>
-                          <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '0.8rem' }}>
-                            Коэффициент сбережений:
-                          </Typography>
-                          <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1rem' }}>
-                            {statistics.totalIncome > 0 ? 
-                              `${((statistics.balance / statistics.totalIncome) * 100).toFixed(1)}%` : 
-                              '0%'}
-                          </Typography>
-                        </Grid>
-                      </Grid>
-                    </Paper>
-                  )}
                 </CardContent>
               </Card>
             </Grid>
+
+            {/* Итоговая статистика по накоплениям — отдельная строка под обеими карточками */}
+            {statistics && (
+              <Grid item xs={12}>
+                <Paper sx={{ p: 2, bgcolor: 'primary.light', color: 'white' }}>
+                  <Grid container spacing={2}>
+                    <Grid item xs={12} sm={6}>
+                      <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '0.8rem' }}>
+                        Самые большие расходы:
+                      </Typography>
+                      <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1rem' }}>
+                        {statistics.expenseByCategory && Object.keys(statistics.expenseByCategory).length > 0
+                          ? Object.entries(statistics.expenseByCategory)
+                              .sort(([,a], [,b]) => b - a)[0]?.[0]
+                          : 'Нет данных'}
+                      </Typography>
+                    </Grid>
+                    <Grid item xs={12} sm={6}>
+                      <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '0.8rem' }}>
+                        Коэффициент сбережений:
+                      </Typography>
+                      <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1rem' }}>
+                        {statistics.totalIncome > 0 ? 
+                          `${((statistics.balance / statistics.totalIncome) * 100).toFixed(1)}%` : 
+                          '0%'}
+                      </Typography>
+                    </Grid>
+                  </Grid>
+                </Paper>
+              </Grid>
+            )}
           </Grid>
         </Grid>
       </Grid>
