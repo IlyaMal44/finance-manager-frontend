@@ -47,8 +47,10 @@ const Transactions = () => {
 
   const categories = [
     'Продукты', 'Транспорт', 'Развлечения', 'Одежда',
-    'Здоровье', 'Образование', 'Другое', 'Зарплата',
-    'Фриланс', 'Инвестиции', 'Подарок', 'Кредит'
+    'Здоровье', 'Образование', 'Жилье', 'Коммунальные',
+    'Связь', 'Кредит', 'Подарки', 'Путешествия',
+    'Красота', 'Спорт', 'Другое',
+    'Зарплата', 'Фриланс', 'Инвестиции', 'Подарок', 'Возврат долга', 'Дивиденды', 'Стипендия', 'Пенсия',
   ];
 
   useEffect(() => {
@@ -61,52 +63,16 @@ const Transactions = () => {
     setLoading(true);
     setError('');
     try {
-      // Получаем статистику, которая содержит информацию о транзакциях
-      const statsResponse = await api.get(`/finance/${walletId}/statistics`);
-      const statsData = statsResponse.data;
+      // Получаем реальные транзакции из backend
+      const response = await api.get(`/finance/${walletId}/transactions`);
 
-      // Создаем транзакции на основе статистики
-      const realTransactions = [];
-
-      // Добавляем расходы из expenseByCategory
-      if (statsData.expenseByCategory && typeof statsData.expenseByCategory === 'object') {
-        Object.entries(statsData.expenseByCategory).forEach(([category, amount], index) => {
-          if (amount > 0) {
-            realTransactions.push({
-              id: `expense-${index}-${Date.now()}`,
-              type: 'EXPENSE',
-              amount: amount,
-              category: category,
-              description: `Расходы по категории: ${category}`,
-              date: new Date().toISOString().split('T')[0],
-              walletId: walletId,
-            });
-          }
-        });
-      }
-
-      // Добавляем доходы из incomeByCategory
-      if (statsData.incomeByCategory && typeof statsData.incomeByCategory === 'object') {
-        Object.entries(statsData.incomeByCategory).forEach(([category, amount], index) => {
-          if (amount > 0) {
-            realTransactions.push({
-              id: `income-${index}-${Date.now()}`,
-              type: 'INCOME',
-              amount: amount,
-              category: category,
-              description: `Доходы по категории: ${category}`,
-              date: new Date().toISOString().split('T')[0],
-              walletId: walletId,
-            });
-          }
-        });
-      }
-
-      setTransactions(realTransactions);
-
+      // Ожидаемый формат: массив объектов
+      // { id, type: 'INCOME' | 'EXPENSE', amount, category, description, date }
+      const data = Array.isArray(response.data) ? response.data : [];
+      setTransactions(data);
     } catch (error) {
       console.error('Ошибка загрузки транзакций:', error);
-      setError('Не удалось загрузить историю транзакций');
+      setError(error.response?.data?.message || 'Не удалось загрузить историю транзакций');
 
       // Если пользователь не авторизован
       if (error.response?.status === 401 || error.response?.status === 403) {
@@ -114,7 +80,6 @@ const Transactions = () => {
         localStorage.removeItem('walletId');
         navigate('/login');
       }
-
     } finally {
       setLoading(false);
     }
@@ -155,26 +120,28 @@ const Transactions = () => {
     let filtered = [...transactions];
 
     if (filterType !== 'ALL') {
-      filtered = filtered.filter(t => t.type === filterType);
+      filtered = filtered.filter((t) => t.type === filterType);
     }
 
     if (filterCategory) {
-      filtered = filtered.filter(t => t.category === filterCategory);
+      filtered = filtered.filter((t) => t.category === filterCategory);
     }
 
-    return filtered.sort((a, b) => new Date(b.date) - new Date(a.date));
+    return filtered.sort(
+      (a, b) => new Date(b.date || b.createdAt) - new Date(a.date || a.createdAt),
+    );
   };
 
   const getTypeIcon = (type) => {
-    return type === 'INCOME' ?
-      <ArrowUpward sx={{ color: '#4CAF50', fontSize: 18, mr: 0.5 }} /> :
-      <ArrowDownward sx={{ color: '#F44336', fontSize: 18, mr: 0.5 }} />;
+    return type === 'INCOME'
+      ? <ArrowUpward sx={{ color: '#4CAF50', fontSize: 18, mr: 0.5 }} />
+      : <ArrowDownward sx={{ color: '#F44336', fontSize: 18, mr: 0.5 }} />;
   };
 
   const getTotalAmount = (type) => {
     return getFilteredTransactions()
-      .filter(t => type ? t.type === type : true)
-      .reduce((sum, t) => sum + t.amount, 0);
+      .filter((t) => (type ? t.type === type : true))
+      .reduce((sum, t) => sum + (t.amount || 0), 0);
   };
 
   if (!walletId) {
@@ -270,8 +237,10 @@ const Transactions = () => {
                 onChange={(e) => setFilterCategory(e.target.value)}
               >
                 <MenuItem value="">Все категории</MenuItem>
-                {categories.map(category => (
-                  <MenuItem key={category} value={category}>{category}</MenuItem>
+                {categories.map((category) => (
+                  <MenuItem key={category} value={category}>
+                    {category}
+                  </MenuItem>
                 ))}
               </TextField>
             </Grid>
@@ -306,7 +275,11 @@ const Transactions = () => {
           <Typography variant="h5" color="text.secondary" gutterBottom>
             Нет транзакций
           </Typography>
-          <Typography variant="body1" color="text.secondary" sx={{ mb: 3, maxWidth: 500, mx: 'auto' }}>
+          <Typography
+            variant="body1"
+            color="text.secondary"
+            sx={{ mb: 3, maxWidth: 500, mx: 'auto' }}
+          >
             Вы еще не создали ни одной транзакции.
             Перейдите на дашборд и добавьте свою первую транзакцию!
           </Typography>
@@ -349,12 +322,14 @@ const Transactions = () => {
                       hover
                       sx={{
                         '&:hover': {
-                          backgroundColor: transaction.type === 'INCOME' ?
-                            'rgba(76, 175, 80, 0.04)' : 'rgba(244, 67, 54, 0.04)'
-                        }
+                          backgroundColor:
+                            transaction.type === 'INCOME'
+                              ? 'rgba(76, 175, 80, 0.04)'
+                              : 'rgba(244, 67, 54, 0.04)',
+                        },
                       }}
                     >
-                      <TableCell>{formatDate(transaction.date)}</TableCell>
+                      <TableCell>{formatDate(transaction.date || transaction.createdAt)}</TableCell>
                       <TableCell>
                         <Chip
                           icon={getTypeIcon(transaction.type)}
@@ -369,9 +344,11 @@ const Transactions = () => {
                           label={transaction.category}
                           size="small"
                           sx={{
-                            backgroundColor: transaction.type === 'INCOME' ?
-                              'rgba(76, 175, 80, 0.1)' : 'rgba(244, 67, 54, 0.1)',
-                            color: transaction.type === 'INCOME' ? '#4CAF50' : '#F44336'
+                            backgroundColor:
+                              transaction.type === 'INCOME'
+                                ? 'rgba(76, 175, 80, 0.1)'
+                                : 'rgba(244, 67, 54, 0.1)',
+                            color: transaction.type === 'INCOME' ? '#4CAF50' : '#F44336',
                           }}
                         />
                       </TableCell>
@@ -385,7 +362,7 @@ const Transactions = () => {
                           variant="body1"
                           sx={{
                             fontWeight: 600,
-                            color: transaction.type === 'INCOME' ? '#4CAF50' : '#F44336'
+                            color: transaction.type === 'INCOME' ? '#4CAF50' : '#F44336',
                           }}
                         >
                           {transaction.type === 'INCOME' ? '+' : '-'}
@@ -436,7 +413,9 @@ const Transactions = () => {
                         <Typography variant="subtitle2" color="text.secondary">
                           Дата
                         </Typography>
-                        <Typography variant="body1">{formatDate(selectedTransaction.date)}</Typography>
+                        <Typography variant="body1">
+                          {formatDate(selectedTransaction.date || selectedTransaction.createdAt)}
+                        </Typography>
                       </Grid>
                       <Grid item xs={12}>
                         <Typography variant="subtitle2" color="text.secondary">
@@ -446,7 +425,7 @@ const Transactions = () => {
                           variant="h5"
                           sx={{
                             color: selectedTransaction.type === 'INCOME' ? '#4CAF50' : '#F44336',
-                            fontWeight: 600
+                            fontWeight: 600,
                           }}
                         >
                           {selectedTransaction.type === 'INCOME' ? '+' : '-'}
@@ -471,14 +450,6 @@ const Transactions = () => {
               </>
             )}
           </Dialog>
-
-          {/* Информационное сообщение */}
-          <Alert severity="info" sx={{ mt: 3 }}>
-            <Typography variant="body2">
-              <strong>Примечание:</strong> Отображаются транзакции, сгенерированные на основе статистики расходов и доходов.
-              Для полной функциональности необходим отдельный endpoint для управления транзакциями.
-            </Typography>
-          </Alert>
         </>
       )}
     </Container>
