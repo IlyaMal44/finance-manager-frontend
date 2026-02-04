@@ -106,11 +106,17 @@ const Transactions = () => {
   const formatDate = (dateString) => {
     if (!dateString) return 'Не указано';
     try {
-      return new Date(dateString).toLocaleDateString('ru-RU', {
+      const date = new Date(dateString);
+      const dateStr = date.toLocaleDateString('ru-RU', {
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
       });
+      const timeStr = date.toLocaleTimeString('ru-RU', {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      return `${dateStr} ${timeStr}`;
     } catch (e) {
       return dateString;
     }
