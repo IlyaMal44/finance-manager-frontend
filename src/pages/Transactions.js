@@ -32,6 +32,8 @@ import {
   ArrowUpward,
   ArrowDownward,
   ArrowBack,
+  Edit,
+  Delete,
 } from '@mui/icons-material';
 
 const Transactions = () => {
@@ -43,6 +45,8 @@ const Transactions = () => {
   const [filterCategory, setFilterCategory] = useState('');
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editTransaction, setEditTransaction] = useState(null);
   const navigate = useNavigate();
 
   const categories = [
@@ -93,6 +97,48 @@ const Transactions = () => {
   const handleCloseDialog = () => {
     setViewDialogOpen(false);
     setSelectedTransaction(null);
+  };
+
+  const handleOpenEditDialog = (transaction) => {
+    setEditTransaction({
+      ...transaction,
+      amount: transaction.amount != null ? String(transaction.amount) : '',
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleCloseEditDialog = () => {
+    setEditDialogOpen(false);
+    setEditTransaction(null);
+  };
+
+  const handleDeleteTransaction = async (transaction) => {
+    if (!window.confirm('Удалить эту транзакцию?')) return;
+    try {
+      await api.delete(`/finance/${walletId}/transactions/${transaction.id}`);
+      setTransactions((prev) => prev.filter((t) => t.id !== transaction.id));
+    } catch (error) {
+      console.error('Ошибка удаления транзакции:', error);
+      setError(error.response?.data?.message || 'Не удалось удалить транзакцию');
+    }
+  };
+
+  const handleSaveEditTransaction = async () => {
+    if (!editTransaction) return;
+    try {
+      await api.put(`/finance/${walletId}/transactions/${editTransaction.id}`, {
+        type: editTransaction.type,
+        amount: parseFloat(editTransaction.amount),
+        category: editTransaction.category,
+        description: editTransaction.description,
+        date: editTransaction.date,
+      });
+      await fetchTransactions();
+      handleCloseEditDialog();
+    } catch (error) {
+      console.error('Ошибка обновления транзакции:', error);
+      setError(error.response?.data?.message || 'Не удалось обновить транзакцию');
+    }
   };
 
   const formatCurrency = (amount) => {
@@ -275,20 +321,20 @@ const Transactions = () => {
               </TextField>
             </Grid>
             <Grid item xs={12} md={4}>
-              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5, opacity: 0 }}>
+              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
                 &nbsp;
               </Typography>
-              <Button
-                variant="outlined"
-                fullWidth
-                onClick={() => {
-                  setFilterType('ALL');
-                  setFilterCategory('');
-                }}
-                sx={{ height: '40px' }}
-              >
-                Сбросить фильтры
-              </Button>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <Button
+                  variant="outlined"
+                  onClick={() => {
+                    setFilterType('ALL');
+                    setFilterCategory('');
+                  }}
+                >
+                  Сбросить фильтры
+                </Button>
+              </Box>
             </Grid>
           </Grid>
         </Paper>
@@ -395,15 +441,35 @@ const Transactions = () => {
                         </Typography>
                       </TableCell>
                       <TableCell align="center">
-                        <Tooltip title="Просмотреть детали">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleViewTransaction(transaction)}
-                            color="primary"
-                          >
-                            <Visibility fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
+                        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
+                          <Tooltip title="Просмотреть детали">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleViewTransaction(transaction)}
+                              color="primary"
+                            >
+                              <Visibility fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Изменить">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleOpenEditDialog(transaction)}
+                              color="primary"
+                            >
+                              <Edit fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                          <Tooltip title="Удалить">
+                            <IconButton
+                              size="small"
+                              onClick={() => handleDeleteTransaction(transaction)}
+                              color="error"
+                            >
+                              <Delete fontSize="small" />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
                       </TableCell>
                     </TableRow>
                   ))
@@ -471,6 +537,85 @@ const Transactions = () => {
                 </DialogContent>
                 <DialogActions>
                   <Button onClick={handleCloseDialog}>Закрыть</Button>
+                </DialogActions>
+              </>
+            )}
+          </Dialog>
+
+          {/* Диалог редактирования транзакции */}
+          <Dialog open={editDialogOpen} onClose={handleCloseEditDialog} maxWidth="sm" fullWidth>
+            {editTransaction && (
+              <>
+                <DialogTitle>Редактирование транзакции</DialogTitle>
+                <DialogContent>
+                  <Box sx={{ mt: 2 }}>
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} sm={6}>
+                        <TextField
+                          select
+                          fullWidth
+                          size="small"
+                          label="Тип транзакции"
+                          value={editTransaction.type}
+                          onChange={(e) =>
+                            setEditTransaction({ ...editTransaction, type: e.target.value })
+                          }
+                        >
+                          <MenuItem value="INCOME">Доход</MenuItem>
+                          <MenuItem value="EXPENSE">Расход</MenuItem>
+                        </TextField>
+                      </Grid>
+                      <Grid item xs={12} sm={6}>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          label="Сумма"
+                          type="number"
+                          value={editTransaction.amount}
+                          onChange={(e) =>
+                            setEditTransaction({ ...editTransaction, amount: e.target.value })
+                          }
+                        />
+                      </Grid>
+                      <Grid item xs={12}>
+                        <TextField
+                          select
+                          fullWidth
+                          size="small"
+                          label="Категория"
+                          value={editTransaction.category || ''}
+                          onChange={(e) =>
+                            setEditTransaction({ ...editTransaction, category: e.target.value })
+                          }
+                        >
+                          {categories.map((category) => (
+                            <MenuItem key={category} value={category}>
+                              {category}
+                            </MenuItem>
+                          ))}
+                        </TextField>
+                      </Grid>
+                      <Grid item xs={12}>
+                        <TextField
+                          fullWidth
+                          size="small"
+                          label="Описание (необязательно)"
+                          multiline
+                          rows={2}
+                          value={editTransaction.description || ''}
+                          onChange={(e) =>
+                            setEditTransaction({ ...editTransaction, description: e.target.value })
+                          }
+                        />
+                      </Grid>
+                    </Grid>
+                  </Box>
+                </DialogContent>
+                <DialogActions>
+                  <Button onClick={handleCloseEditDialog}>Отмена</Button>
+                  <Button onClick={handleSaveEditTransaction} variant="contained">
+                    Сохранить
+                  </Button>
                 </DialogActions>
               </>
             )}
