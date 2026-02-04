@@ -227,9 +227,17 @@ const Transactions = () => {
                 select
                 fullWidth
                 size="small"
-                label=""
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value)}
+                SelectProps={{
+                  displayEmpty: true,
+                  renderValue: (selected) => {
+                    if (selected === 'ALL') {
+                      return <Typography color="text.secondary">Все типы</Typography>;
+                    }
+                    return selected === 'INCOME' ? 'Доходы' : 'Расходы';
+                  }
+                }}
               >
                 <MenuItem value="ALL">Все типы</MenuItem>
                 <MenuItem value="INCOME">Доходы</MenuItem>
@@ -244,11 +252,21 @@ const Transactions = () => {
                 select
                 fullWidth
                 size="small"
-                label=""
                 value={filterCategory}
                 onChange={(e) => setFilterCategory(e.target.value)}
+                SelectProps={{
+                  displayEmpty: true,
+                  renderValue: (selected) => {
+                    if (!selected) {
+                      return <Typography color="text.secondary">Все категории</Typography>;
+                    }
+                    return selected;
+                  }
+                }}
               >
-                <MenuItem value="">Все категории</MenuItem>
+                <MenuItem value="">
+                  <em>Все категории</em>
+                </MenuItem>
                 {categories.map((category) => (
                   <MenuItem key={category} value={category}>
                     {category}
