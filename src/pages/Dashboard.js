@@ -21,7 +21,6 @@ import {
   Autocomplete,
 } from '@mui/material';
 import {
-  TrendingUp,
   TrendingDown,
   AccountBalanceWallet,
   AddCircle,
@@ -179,17 +178,6 @@ const Dashboard = () => {
     }).format(amount || 0);
   };
 
-  const getMonthlyGrowth = () => {
-    if (!statistics) return 0;
-    const income = statistics.totalIncome || 0;
-    const expense = statistics.totalExpense || 0;
-    const previousMonth = (income - expense) * 0.9;
-    const currentMonth = income - expense;
-    
-    if (previousMonth === 0) return 0;
-    return ((currentMonth - previousMonth) / previousMonth * 100).toFixed(1);
-  };
-
   const checkBudgetExceeded = () => {
     if (!statistics?.budgetStatus) return false;
     return Object.values(statistics.budgetStatus).some(budget => budget.exceeded);
@@ -278,12 +266,6 @@ const Dashboard = () => {
                   </Typography>
                 </Box>
               </Box>
-              <Chip 
-                icon={<TrendingUp />} 
-                label={`${getMonthlyGrowth()}% за месяц`}
-                size="small"
-                sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: 'white', mt: 1 }}
-              />
             </CardContent>
           </Card>
         </Grid>
