@@ -218,13 +218,16 @@ const Transactions = () => {
       {/* Фильтры - показываем только если есть транзакции */}
       {transactions.length > 0 && (
         <Paper sx={{ p: 2, mb: 3 }}>
-          <Grid container spacing={2} alignItems="center">
+          <Grid container spacing={2} alignItems="flex-start">
             <Grid item xs={12} md={4}>
+              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
+                Тип транзакции
+              </Typography>
               <TextField
                 select
                 fullWidth
                 size="small"
-                label="Тип транзакции"
+                label=""
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value)}
               >
@@ -234,11 +237,14 @@ const Transactions = () => {
               </TextField>
             </Grid>
             <Grid item xs={12} md={4}>
+              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
+                Категория
+              </Typography>
               <TextField
                 select
                 fullWidth
                 size="small"
-                label="Категория"
+                label=""
                 value={filterCategory}
                 onChange={(e) => setFilterCategory(e.target.value)}
               >
