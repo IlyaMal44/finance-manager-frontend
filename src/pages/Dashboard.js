@@ -18,6 +18,7 @@ import {
   Tooltip,
   Alert,
   Snackbar,
+  Autocomplete,
 } from '@mui/material';
 import {
   TrendingUp,
@@ -433,29 +434,58 @@ const Dashboard = () => {
                     <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
                       Категория
                     </Typography>
-                    <TextField
-                      select
-                      fullWidth
-                      label=""
-                      value={transaction.category}
-                      onChange={(e) => setTransaction({...transaction, category: e.target.value})}
-                      size="medium"
-                      required
-                    >
-                      <MenuItem value="">
-                        <em>Выберите категорию</em>
-                      </MenuItem>
-                      {getCurrentCategories().map((cat) => (
-                        <MenuItem key={cat.value} value={cat.value}>
-                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                            <Typography sx={{ mr: 1, fontSize: '1.2rem' }}>
-                              {cat.icon}
-                            </Typography>
-                            {cat.value}
-                          </Box>
-                        </MenuItem>
-                      ))}
-                    </TextField>
+                    <Autocomplete
+                      freeSolo
+                      options={getCurrentCategories().map((cat) => cat.value)}
+                      value={transaction.category || null}
+                      onChange={(e, newValue) =>
+                        setTransaction({ ...transaction, category: newValue || '' })
+                      }
+                      onInputChange={(e, inputValue) =>
+                        setTransaction((prev) => ({ ...prev, category: inputValue || '' }))
+                      }
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          size="medium"
+                          placeholder="Выберите или введите свою категорию"
+                          helperText="Нет нужной категории? Просто начните вводить — она сохранится."
+                          required={!transaction.category}
+                        />
+                      )}
+                      noOptionsText="Нет в списке — продолжайте вводить свою категорию"
+                      slotProps={{
+                        paper: {
+                          sx: {
+                            minWidth: 340,
+                            '& .MuiAutocomplete-listbox': {
+                              '& .MuiAutocomplete-option': {
+                                fontSize: '1rem',
+                                padding: '10px 14px',
+                              },
+                            },
+                          },
+                        },
+                      }}
+                      renderOption={(props, option) => {
+                        const cat = getCurrentCategories().find((c) => c.value === option);
+                        return (
+                          <li {...props} key={option}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Typography component="span" sx={{ fontSize: 18 }}>
+                                {cat?.icon || '📦'}
+                              </Typography>
+                              <Typography
+                                component="span"
+                                sx={{ fontSize: 16, fontWeight: 500, color: '#1a1a1a' }}
+                              >
+                                {option}
+                              </Typography>
+                            </Box>
+                          </li>
+                        );
+                      }}
+                    />
                   </Grid>
                   
                   <Grid item xs={12}>

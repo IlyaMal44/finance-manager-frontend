@@ -25,6 +25,7 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Autocomplete,
 } from '@mui/material';
 import {
   Refresh,
@@ -61,8 +62,14 @@ const Transactions = () => {
     'Красота', 'Спорт', 'Другое (расход)',
   ];
 
-  // Все категории для фильтров (объединённый список)
-  const categories = [...incomeCategories, ...expenseCategories];
+  // Все категории для фильтров: стандартные + уникальные из транзакций (свои категории)
+  const categoriesForFilter = [
+    ...new Set([
+      ...incomeCategories,
+      ...expenseCategories,
+      ...transactions.map((t) => t.category).filter(Boolean),
+    ]),
+  ].sort((a, b) => a.localeCompare(b));
 
   // Получаем текущие категории в зависимости от типа транзакции (для редактирования)
   const getCurrentCategoriesForEdit = () => {
@@ -326,7 +333,7 @@ const Transactions = () => {
                 <MenuItem value="">
                   <em>Все категории</em>
                 </MenuItem>
-                {categories.map((category) => (
+                {categoriesForFilter.map((category) => (
                   <MenuItem key={category} value={category}>
                     {category}
                   </MenuItem>
@@ -608,22 +615,46 @@ const Transactions = () => {
                         <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
                           Категория
                         </Typography>
-                        <TextField
-                          select
-                          fullWidth
-                          size="small"
-                          label=""
-                          value={editTransaction.category || ''}
-                          onChange={(e) =>
-                            setEditTransaction({ ...editTransaction, category: e.target.value })
+                        <Autocomplete
+                          freeSolo
+                          options={getCurrentCategoriesForEdit()}
+                          value={editTransaction.category || null}
+                          onChange={(e, newValue) =>
+                            setEditTransaction({ ...editTransaction, category: newValue || '' })
                           }
-                        >
-                          {getCurrentCategoriesForEdit().map((category) => (
-                            <MenuItem key={category} value={category}>
-                              {category}
-                            </MenuItem>
-                          ))}
-                        </TextField>
+                          onInputChange={(e, inputValue) =>
+                            setEditTransaction((prev) => ({ ...prev, category: inputValue || '' }))
+                          }
+                          noOptionsText="Нет в списке — продолжайте вводить свою категорию"
+                          slotProps={{
+                            paper: {
+                              sx: {
+                                minWidth: 340,
+                                '& .MuiAutocomplete-listbox': {
+                                  '& .MuiAutocomplete-option': {
+                                    fontSize: '1rem',
+                                    padding: '10px 14px',
+                                  },
+                                },
+                              },
+                            },
+                          }}
+                          renderOption={(props, option) => (
+                            <li {...props} key={option}>
+                              <span style={{ fontSize: 16, color: '#1a1a1a', fontWeight: 500 }}>
+                                {option}
+                              </span>
+                            </li>
+                          )}
+                          renderInput={(params) => (
+                            <TextField
+                              {...params}
+                              size="small"
+                              placeholder="Выберите или введите свою категорию"
+                              helperText="Нет нужной категории? Просто начните вводить — она сохранится."
+                            />
+                          )}
+                        />
                       </Grid>
                       <Grid item xs={12}>
                         <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
