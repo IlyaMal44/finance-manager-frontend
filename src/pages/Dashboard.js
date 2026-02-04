@@ -373,7 +373,7 @@ const Dashboard = () => {
         <Grid item xs={12} md={5}>
           <Card sx={{ borderRadius: 2, boxShadow: 3, overflow: 'visible' }}>
             <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
                 <AddCircle color="primary" sx={{ fontSize: 30, mr: 2 }} />
                 <Typography variant="h6" sx={{ fontWeight: 600 }}>
                   Новая транзакция
@@ -381,12 +381,15 @@ const Dashboard = () => {
               </Box>
               
               <form onSubmit={handleTransactionSubmit}>
-                <Grid container spacing={2}>
+                <Grid container spacing={2} sx={{ mt: -0.5 }}>
                   <Grid item xs={12} md={6}>
+                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
+                      Тип транзакции
+                    </Typography>
                     <TextField
                       select
                       fullWidth
-                      label="Тип транзакции"
+                      label=""
                       value={transaction.type}
                       onChange={(e) => handleTypeChange(e.target.value)}
                       size="small"
@@ -408,9 +411,12 @@ const Dashboard = () => {
                   </Grid>
                   
                   <Grid item xs={12} md={6}>
+                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
+                      Сумма
+                    </Typography>
                     <TextField
                       fullWidth
-                      label="Сумма"
+                      label=""
                       type="number"
                       value={transaction.amount}
                       onChange={(e) => setTransaction({...transaction, amount: e.target.value})}
@@ -424,13 +430,16 @@ const Dashboard = () => {
                   </Grid>
                   
                   <Grid item xs={12}>
+                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
+                      Категория
+                    </Typography>
                     <TextField
                       select
                       fullWidth
-                      label="Категория"
+                      label=""
                       value={transaction.category}
                       onChange={(e) => setTransaction({...transaction, category: e.target.value})}
-                      size="small"
+                      size="medium"
                       required
                     >
                       <MenuItem value="">
@@ -450,9 +459,12 @@ const Dashboard = () => {
                   </Grid>
                   
                   <Grid item xs={12}>
+                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
+                      Описание (необязательно)
+                    </Typography>
                     <TextField
                       fullWidth
-                      label="Описание (необязательно)"
+                      label=""
                       value={transaction.description}
                       onChange={(e) => setTransaction({...transaction, description: e.target.value})}
                       size="small"
