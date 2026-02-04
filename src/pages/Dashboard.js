@@ -608,7 +608,8 @@ const Dashboard = () => {
 
         {/* Правая колонка: Статистика */}
         <Grid item xs={12} md={7}>
-          <Card sx={{ borderRadius: 2, boxShadow: 3, height: '100%' }}>
+          {/* Распределение расходов */}
+          <Card sx={{ borderRadius: 2, boxShadow: 3, mb: 3 }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
                 <PieChart color="primary" sx={{ fontSize: 30, mr: 2 }} />
@@ -618,7 +619,7 @@ const Dashboard = () => {
               </Box>
               
               {statistics?.expenseByCategory && Object.keys(statistics.expenseByCategory).length > 0 ? (
-                <Box sx={{ maxHeight: '500px', overflowY: 'auto', pr: 1 }}>
+                <Box sx={{ maxHeight: '300px', overflowY: 'auto', pr: 1 }}>
                   {Object.entries(statistics.expenseByCategory).map(([category, amount]) => {
                     const percentage = statistics.totalExpense > 0 ? 
                       (amount / statistics.totalExpense * 100).toFixed(1) : 0;
@@ -668,9 +669,73 @@ const Dashboard = () => {
                   </Typography>
                 </Box>
               )}
+            </CardContent>
+          </Card>
+
+          {/* Распределение доходов */}
+          <Card sx={{ borderRadius: 2, boxShadow: 3 }}>
+            <CardContent>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                <PieChart color="success" sx={{ fontSize: 30, mr: 2 }} />
+                <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                  Распределение доходов
+                </Typography>
+              </Box>
               
-              {/* Итоговая статистика */}
-              {statistics && statistics.expenseByCategory && Object.keys(statistics.expenseByCategory).length > 0 && (
+              {statistics?.incomeByCategory && Object.keys(statistics.incomeByCategory).length > 0 ? (
+                <Box sx={{ maxHeight: '300px', overflowY: 'auto', pr: 1 }}>
+                  {Object.entries(statistics.incomeByCategory).map(([category, amount]) => {
+                    const percentage = statistics.totalIncome > 0 ? 
+                      (amount / statistics.totalIncome * 100).toFixed(1) : 0;
+                    const categoryInfo = incomeCategories.find(c => c.value === category);
+                    
+                    return (
+                      <Box key={category} sx={{ mb: 2 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <Typography sx={{ mr: 1, fontSize: 18 }}>
+                              {categoryInfo?.icon || '📦'}
+                            </Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                              {category}
+                            </Typography>
+                          </Box>
+                          <Box sx={{ textAlign: 'right' }}>
+                            <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                              {formatCurrency(amount)}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {percentage}% от доходов
+                            </Typography>
+                          </Box>
+                        </Box>
+                        <LinearProgress 
+                          variant="determinate" 
+                          value={percentage} 
+                          sx={{ 
+                            height: 6, 
+                            borderRadius: 3,
+                            backgroundColor: 'rgba(0,0,0,0.1)',
+                            '& .MuiLinearProgress-bar': {
+                              backgroundColor: categoryInfo?.color || '#4CAF50',
+                              borderRadius: 3,
+                            }
+                          }}
+                        />
+                      </Box>
+                    );
+                  })}
+                </Box>
+              ) : (
+                <Box sx={{ py: 4, textAlign: 'center' }}>
+                  <Typography variant="body1" color="text.secondary">
+                    Нет данных о доходах. Добавьте первую транзакцию!
+                  </Typography>
+                </Box>
+              )}
+
+              {/* Итоговая статистика по накоплениям */}
+              {statistics && (
                 <Paper sx={{ p: 2, mt: 3, bgcolor: 'primary.light', color: 'white' }}>
                   <Grid container spacing={2}>
                     <Grid item xs={6}>
@@ -678,8 +743,10 @@ const Dashboard = () => {
                         Самые большие расходы:
                       </Typography>
                       <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1rem' }}>
-                        {Object.entries(statistics.expenseByCategory)
-                          .sort(([,a], [,b]) => b - a)[0]?.[0] || 'Нет данных'}
+                        {statistics.expenseByCategory && Object.keys(statistics.expenseByCategory).length > 0
+                          ? Object.entries(statistics.expenseByCategory)
+                              .sort(([,a], [,b]) => b - a)[0]?.[0]
+                          : 'Нет данных'}
                       </Typography>
                     </Grid>
                     <Grid item xs={6}>
