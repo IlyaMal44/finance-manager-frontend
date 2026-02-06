@@ -21,7 +21,6 @@ import {
   Autocomplete,
 } from '@mui/material';
 import {
-  TrendingDown,
   AccountBalanceWallet,
   AddCircle,
   AttachMoney,
@@ -37,7 +36,7 @@ import {
 
 const Dashboard = () => {
   const [walletId] = useState(localStorage.getItem('walletId'));
-  const [user, setUser] = useState(JSON.parse(localStorage.getItem('user') || '{}'));
+  const [user] = useState(JSON.parse(localStorage.getItem('user') || '{}'));
   const [statistics, setStatistics] = useState(null);
   const [loading, setLoading] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
@@ -156,18 +155,6 @@ const Dashboard = () => {
 
   const handleCloseSnackbar = () => {
     setSnackbar({ ...snackbar, open: false });
-  };
-
-  const getCategoryIcon = (category) => {
-    const allCategories = [...incomeCategories, ...expenseCategories];
-    const cat = allCategories.find(c => c.value === category);
-    return cat ? cat.icon : '📦';
-  };
-
-  const getCategoryColor = (category) => {
-    const allCategories = [...incomeCategories, ...expenseCategories];
-    const cat = allCategories.find(c => c.value === category);
-    return cat ? cat.color : '#795548';
   };
 
   const formatCurrency = (amount) => {
@@ -449,7 +436,8 @@ const Dashboard = () => {
                         clearIndicator: { title: '' },
                         paper: {
                           sx: {
-                            minWidth: 340,
+                            minWidth: { xs: 0, sm: 340 },
+                            maxWidth: 'calc(100vw - 32px)',
                             '& .MuiAutocomplete-listbox': {
                               '& .MuiAutocomplete-option': {
                                 fontSize: '1rem',

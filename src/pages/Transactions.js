@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axiosConfig';
 import {
@@ -77,13 +77,7 @@ const Transactions = () => {
     return editTransaction.type === 'INCOME' ? incomeCategories : expenseCategories;
   };
 
-  useEffect(() => {
-    if (walletId) {
-      fetchTransactions();
-    }
-  }, [walletId]);
-
-  const fetchTransactions = async () => {
+  const fetchTransactions = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
@@ -107,7 +101,13 @@ const Transactions = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [walletId, navigate]);
+
+  useEffect(() => {
+    if (walletId) {
+      fetchTransactions();
+    }
+  }, [walletId, fetchTransactions]);
 
   const handleViewTransaction = (transaction) => {
     setSelectedTransaction(transaction);
@@ -231,6 +231,14 @@ const Transactions = () => {
 
   return (
     <Container maxWidth="xl" sx={{ py: 3 }}>
+      {loading && <LinearProgress sx={{ mb: 2 }} />}
+
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+
       {/* Заголовок и управление */}
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
         <Box>
@@ -637,7 +645,8 @@ const Transactions = () => {
                             clearIndicator: { title: '' },
                             paper: {
                               sx: {
-                                minWidth: 340,
+                                minWidth: { xs: 0, sm: 340 },
+                                maxWidth: 'calc(100vw - 32px)',
                                 '& .MuiAutocomplete-listbox': {
                                   '& .MuiAutocomplete-option': {
                                     fontSize: '1rem',

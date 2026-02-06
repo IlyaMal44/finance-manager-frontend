@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   Container,
   Typography,
@@ -24,23 +24,17 @@ import {
   TableHead,
   TableRow,
   Paper,
-  MenuItem,
   Autocomplete,
   Tooltip,
-  Divider,
 } from '@mui/material';
 import {
   Add,
   Edit,
   Delete,
-  TrendingUp,
-  TrendingDown,
   Warning,
   Savings,
   Category,
   Refresh,
-  AttachMoney,
-  MoneyOff,
   ArrowBack,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -68,8 +62,12 @@ const Budget = () => {
   
   const navigate = useNavigate();
 
+  const showSnackbar = useCallback((message, severity) => {
+    setSnackbar({ open: true, message, severity });
+  }, []);
+
   // Загрузка данных
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!walletId) return;
     
     setLoading(true);
@@ -96,7 +94,7 @@ const Budget = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [walletId, showSnackbar]);
 
   useEffect(() => {
     if (!user || !user.username) {
@@ -104,7 +102,7 @@ const Budget = () => {
       return;
     }
     fetchData();
-  }, [user, navigate]);
+  }, [user, navigate, fetchData]);
 
   // Установка нового бюджета
   const handleSetBudget = async () => {
@@ -196,10 +194,6 @@ const Budget = () => {
       console.error('Ошибка установки бюджетов:', error);
       showSnackbar('Ошибка при установке бюджетов', 'error');
     }
-  };
-
-  const showSnackbar = (message, severity) => {
-    setSnackbar({ open: true, message, severity });
   };
 
   const handleCloseSnackbar = () => {
@@ -296,7 +290,16 @@ const Budget = () => {
       </Snackbar>
 
       {/* Заголовок и управление */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: { xs: 'stretch', sm: 'center' },
+          flexDirection: { xs: 'column', sm: 'row' },
+          gap: { xs: 2, sm: 0 },
+          mb: 4,
+        }}
+      >
         <Box>
           <Typography variant="h4" gutterBottom sx={{ fontWeight: 600, color: 'primary.main' }}>
             Управление бюджетами
@@ -305,7 +308,15 @@ const Budget = () => {
             Установите лимиты расходов по категориям для контроля финансов
           </Typography>
         </Box>
-        <Box sx={{ display: 'flex', gap: 2 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 2,
+            flexWrap: 'wrap',
+            justifyContent: { xs: 'flex-start', sm: 'flex-end' },
+            width: { xs: '100%', sm: 'auto' },
+          }}
+        >
           <Tooltip title="Обновить">
             <IconButton onClick={fetchData} disabled={loading}>
               <Refresh />
@@ -315,6 +326,7 @@ const Budget = () => {
             variant="outlined" 
             startIcon={<ArrowBack />}
             onClick={() => navigate('/dashboard')}
+            sx={{ width: { xs: '100%', sm: 'auto' } }}
           >
             Назад к дашборду
           </Button>
@@ -326,6 +338,7 @@ const Budget = () => {
               setNewBudget({ category: '', limitAmount: '' });
               setOpenDialog(true);
             }}
+            sx={{ width: { xs: '100%', sm: 'auto' } }}
           >
             Новый бюджет
           </Button>
