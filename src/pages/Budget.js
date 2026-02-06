@@ -588,12 +588,20 @@ const Budget = () => {
               freeSolo
               options={categoryOptions}
               value={newBudget.category || null}
+              inputValue={newBudget.category || ''}
               onChange={(e, newValue) =>
                 setNewBudget({ ...newBudget, category: newValue || '' })
               }
-              onInputChange={(e, inputValue) =>
-                setNewBudget((prev) => ({ ...prev, category: inputValue || '' }))
-              }
+              onInputChange={(e, inputValue, reason) => {
+                if (reason === 'input') {
+                  setNewBudget((prev) => ({ ...prev, category: inputValue || '' }));
+                }
+                if (reason === 'clear') {
+                  setNewBudget((prev) => ({ ...prev, category: '' }));
+                }
+              }}
+              clearText=""
+              slotProps={{ clearIndicator: { title: '' } }}
               renderInput={(params) => (
                 <TextField
                   {...params}

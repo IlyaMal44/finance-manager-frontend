@@ -420,23 +420,33 @@ const Dashboard = () => {
                       freeSolo
                       options={getCurrentCategories().map((cat) => cat.value)}
                       value={transaction.category || null}
+                      inputValue={transaction.category || ''}
                       onChange={(e, newValue) =>
                         setTransaction({ ...transaction, category: newValue || '' })
                       }
-                      onInputChange={(e, inputValue) =>
-                        setTransaction((prev) => ({ ...prev, category: inputValue || '' }))
-                      }
+                      onInputChange={(e, inputValue, reason) => {
+                        // Важно: синхронизируем state только когда пользователь реально вводит/очищает.
+                        // Иначе Autocomplete может показывать старый inputValue при пустом value.
+                        if (reason === 'input') {
+                          setTransaction((prev) => ({ ...prev, category: inputValue || '' }));
+                        }
+                        if (reason === 'clear') {
+                          setTransaction((prev) => ({ ...prev, category: '' }));
+                        }
+                      }}
+                      clearText=""
                       renderInput={(params) => (
                         <TextField
                           {...params}
                           size="medium"
                           placeholder="Выберите или введите свою категорию"
                           helperText="Нет нужной категории? Просто начните вводить — она сохранится."
-                          required={!transaction.category}
+                          required
                         />
                       )}
                       noOptionsText="Нет в списке — продолжайте вводить свою категорию"
                       slotProps={{
+                        clearIndicator: { title: '' },
                         paper: {
                           sx: {
                             minWidth: 340,

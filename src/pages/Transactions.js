@@ -619,14 +619,22 @@ const Transactions = () => {
                           freeSolo
                           options={getCurrentCategoriesForEdit()}
                           value={editTransaction.category || null}
+                          inputValue={editTransaction.category || ''}
                           onChange={(e, newValue) =>
                             setEditTransaction({ ...editTransaction, category: newValue || '' })
                           }
-                          onInputChange={(e, inputValue) =>
-                            setEditTransaction((prev) => ({ ...prev, category: inputValue || '' }))
-                          }
+                          onInputChange={(e, inputValue, reason) => {
+                            if (reason === 'input') {
+                              setEditTransaction((prev) => ({ ...prev, category: inputValue || '' }));
+                            }
+                            if (reason === 'clear') {
+                              setEditTransaction((prev) => ({ ...prev, category: '' }));
+                            }
+                          }}
+                          clearText=""
                           noOptionsText="Нет в списке — продолжайте вводить свою категорию"
                           slotProps={{
+                            clearIndicator: { title: '' },
                             paper: {
                               sx: {
                                 minWidth: 340,
