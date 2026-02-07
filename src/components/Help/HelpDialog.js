@@ -38,6 +38,17 @@ const HELP_STEPS = [
             </Typography>
           </li>
         </Box>
+
+        <Box sx={{ mt: 2 }}>
+          <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+            Примеры
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            - Доход: “Зарплата”, 120&nbsp;000 ₽
+            <br />
+            - Расход: “Продукты”, 2&nbsp;350 ₽ (описание: “Пятёрочка”)
+          </Typography>
+        </Box>
       </>
     ),
   },
@@ -65,6 +76,17 @@ const HELP_STEPS = [
             </Typography>
           </li>
         </Box>
+
+        <Box sx={{ mt: 2 }}>
+          <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+            Примеры
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            - Хотите посмотреть траты на еду: выберите тип “Расход” и категорию “Продукты”
+            <br />
+            - Ошиблись в сумме: нажмите “Изменить”, поправьте сумму и сохраните
+          </Typography>
+        </Box>
       </>
     ),
   },
@@ -91,6 +113,17 @@ const HELP_STEPS = [
               Если вы близко к лимиту или превысили его — на дашборде появится предупреждение.
             </Typography>
           </li>
+        </Box>
+
+        <Box sx={{ mt: 2 }}>
+          <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+            Примеры
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            - Поставьте “Продукты” = 20&nbsp;000 ₽. Потратили 16&nbsp;500 ₽ → осталось 3&nbsp;500 ₽
+            <br />
+            - Если потратили больше лимита — в таблице увидите “Превышен”, а на дашборде появится предупреждение
+          </Typography>
         </Box>
       </>
     ),
