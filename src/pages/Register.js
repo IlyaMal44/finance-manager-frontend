@@ -33,6 +33,8 @@ const Register = () => {
         username: formData.username,
         password: formData.password,
       });
+      // Покажем помощь при первом заходе в приложение после регистрации
+      localStorage.setItem('helpAutoOpen', '1');
       setSuccess(true);
       setTimeout(() => navigate('/login'), 2000);
     } catch (err) {

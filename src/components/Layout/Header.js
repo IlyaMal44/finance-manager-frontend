@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   AppBar,
   Toolbar,
@@ -13,8 +13,10 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { DarkMode, LightMode } from '@mui/icons-material';
+import { DarkMode, HelpOutline, LightMode } from '@mui/icons-material';
 import MenuIcon from '@mui/icons-material/Menu';
+
+import HelpDialog from '../Help/HelpDialog';
 
 const NAV_ITEMS = [
   { label: 'Бюджеты', to: '/budgets' },
@@ -27,19 +29,34 @@ const Header = ({ mode, toggleMode }) => {
   const user = JSON.parse(localStorage.getItem('user'));
   const isMobile = useMediaQuery((theme) => theme.breakpoints.down('sm'));
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
+  const [helpOpen, setHelpOpen] = useState(false);
 
   const isMenuOpen = Boolean(menuAnchorEl);
   const handleOpenMenu = (event) => setMenuAnchorEl(event.currentTarget);
   const handleCloseMenu = () => setMenuAnchorEl(null);
 
+  useEffect(() => {
+    // Автопоказ помощи после регистрации (один раз)
+    const shouldAutoOpenHelp = localStorage.getItem('helpAutoOpen') === '1';
+    if (!shouldAutoOpenHelp) return;
+    localStorage.removeItem('helpAutoOpen');
+    setHelpOpen(true);
+  }, []);
+
   const handleLogout = () => {
     localStorage.removeItem('user');
     localStorage.removeItem('walletId');
+    localStorage.removeItem('helpAutoOpen');
     handleCloseMenu();
     navigate('/login');
   };
 
   if (!user) return null;
+
+  const handleOpenHelp = () => {
+    handleCloseMenu();
+    setHelpOpen(true);
+  };
 
   const handleNavigate = (to) => {
     handleCloseMenu();
@@ -47,8 +64,9 @@ const Header = ({ mode, toggleMode }) => {
   };
 
   return (
-    <AppBar position="static">
-      <Toolbar>
+    <>
+      <AppBar position="static">
+        <Toolbar>
         {isMobile && (
           <IconButton color="inherit" edge="start" onClick={handleOpenMenu} aria-label="Открыть меню">
             <MenuIcon />
@@ -83,6 +101,16 @@ const Header = ({ mode, toggleMode }) => {
               <Button color="inherit" onClick={() => navigate('/transactions')}>
                 Транзакции
               </Button>
+              <Tooltip title="Как пользоваться приложением">
+                <Button
+                  color="inherit"
+                  onClick={() => setHelpOpen(true)}
+                  startIcon={<HelpOutline />}
+                  aria-label="Открыть помощь"
+                >
+                  Помощь
+                </Button>
+              </Tooltip>
               <Button color="inherit" onClick={handleLogout}>
                 Выйти
               </Button>
@@ -103,11 +131,15 @@ const Header = ({ mode, toggleMode }) => {
               </MenuItem>
             ))}
             <Divider />
+            <MenuItem onClick={handleOpenHelp}>Помощь</MenuItem>
             <MenuItem onClick={handleLogout}>Выйти</MenuItem>
           </Menu>
         )}
-      </Toolbar>
-    </AppBar>
+        </Toolbar>
+      </AppBar>
+
+      <HelpDialog open={helpOpen} onClose={() => setHelpOpen(false)} />
+    </>
   );
 };
 
