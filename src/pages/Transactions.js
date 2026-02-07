@@ -157,7 +157,22 @@ const Transactions = () => {
       handleCloseEditDialog();
     } catch (error) {
       console.error('Ошибка обновления транзакции:', error);
-      setError(error.response?.data?.message || 'Не удалось обновить транзакцию');
+      const backendMessage =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        '';
+      const isInsufficientFunds =
+        /Недостаточно средств/i.test(backendMessage) ||
+        /InsufficientFunds/i.test(backendMessage);
+
+      if ((error.response?.status === 403 || isInsufficientFunds) && editTransaction?.type === 'EXPENSE') {
+        setError(
+          'Недостаточно средств. Уменьшите сумму расхода или сначала добавьте доход (пополнение).',
+        );
+      } else {
+        setError(backendMessage || 'Не удалось обновить транзакцию');
+      }
     }
   };
 

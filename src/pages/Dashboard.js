@@ -124,11 +124,31 @@ const Dashboard = () => {
       showSnackbar('Заполните все обязательные поля', 'warning');
       return;
     }
+
+    const amountValue = parseFloat(transaction.amount);
+    if (!Number.isFinite(amountValue) || amountValue <= 0) {
+      showSnackbar('Сумма должна быть больше 0', 'warning');
+      return;
+    }
+
+    // Предпроверка: если это расход и денег меньше, чем сумма — покажем понятную ошибку сразу.
+    // (Бэкенд сейчас может вернуть 500 без message, и фронт не сможет понять причину.)
+    if (transaction.type === 'EXPENSE' && typeof statistics?.balance === 'number') {
+      const balance = statistics.balance;
+      if (amountValue > balance) {
+        const missing = amountValue - balance;
+        showSnackbar(
+          `Недостаточно средств. Баланс: ${formatCurrency(balance)}. Расход: ${formatCurrency(amountValue)}. Не хватает: ${formatCurrency(missing)}. Добавьте доход (пополнение).`,
+          'error',
+        );
+        return;
+      }
+    }
     
     try {
       await api.post(`/finance/${walletId}/transaction`, {
         ...transaction,
-        amount: parseFloat(transaction.amount),
+        amount: amountValue,
       });
       
       showSnackbar('Транзакция успешно добавлена!', 'success');
@@ -138,13 +158,31 @@ const Dashboard = () => {
       
     } catch (error) {
       console.error('Ошибка добавления транзакции:', error);
-      
+
+      const backendMessage =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        error.message ||
+        '';
+      const isInsufficientFunds =
+        /Недостаточно средств/i.test(backendMessage) ||
+        /InsufficientFunds/i.test(backendMessage);
+
       if (error.response?.status === 400) {
         showSnackbar(error.response.data.message || 'Ошибка валидации', 'error');
-      } else if (error.response?.status === 403) {
-        showSnackbar('Недостаточно средств', 'error');
+      } else if (error.response?.status === 403 || isInsufficientFunds) {
+        if (transaction.type === 'EXPENSE') {
+          showSnackbar(
+            'Недостаточно средств. Сначала добавьте доход (пополнение), а потом расход. Для контроля расходов можно настроить бюджеты.',
+            'error',
+          );
+        } else {
+          showSnackbar('Операция отклонена', 'error');
+        }
+      } else if (!error.response) {
+        showSnackbar('Сервер недоступен. Попробуйте позже.', 'error');
       } else {
-        showSnackbar('Ошибка при добавлении транзакции', 'error');
+        showSnackbar(backendMessage || 'Ошибка при добавлении транзакции', 'error');
       }
     }
   };

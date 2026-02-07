@@ -10,6 +10,8 @@ import {
   Alert,
 } from '@mui/material';
 
+const MIN_PASSWORD_LENGTH = 6;
+
 const Login = () => {
   const [formData, setFormData] = useState({
     username: '',
@@ -20,6 +22,10 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if ((formData.password || '').length < MIN_PASSWORD_LENGTH) {
+      setError(`Пароль должен быть минимум ${MIN_PASSWORD_LENGTH} символов`);
+      return;
+    }
     try {
       const response = await api.post('/auth/login', formData);
       localStorage.setItem('user', JSON.stringify(response.data));
@@ -29,6 +35,9 @@ const Login = () => {
       setError(err.response?.data?.message || 'Ошибка входа');
     }
   };
+
+  const passwordTooShort =
+    (formData.password || '').length > 0 && (formData.password || '').length < MIN_PASSWORD_LENGTH;
 
   return (
     <Container maxWidth="sm">
@@ -45,7 +54,10 @@ const Login = () => {
             label="Имя пользователя"
             margin="normal"
             value={formData.username}
-            onChange={(e) => setFormData({...formData, username: e.target.value})}
+            onChange={(e) => {
+              setError('');
+              setFormData({ ...formData, username: e.target.value });
+            }}
             required
           />
           
@@ -55,7 +67,13 @@ const Login = () => {
             type="password"
             margin="normal"
             value={formData.password}
-            onChange={(e) => setFormData({...formData, password: e.target.value})}
+            onChange={(e) => {
+              setError('');
+              setFormData({ ...formData, password: e.target.value });
+            }}
+            inputProps={{ minLength: MIN_PASSWORD_LENGTH }}
+            error={passwordTooShort}
+            helperText={`Минимум ${MIN_PASSWORD_LENGTH} символов`}
             required
           />
           
