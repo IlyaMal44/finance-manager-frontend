@@ -14,7 +14,7 @@ const MIN_PASSWORD_LENGTH = 6;
 
 const Login = () => {
   const [formData, setFormData] = useState({
-    username: '',
+    mail: '',
     password: '',
   });
   const [error, setError] = useState('');
@@ -51,12 +51,13 @@ const Login = () => {
         <form onSubmit={handleSubmit}>
           <TextField
             fullWidth
-            label="Имя пользователя"
+            label="Почта"
+            type="email"
             margin="normal"
-            value={formData.username}
+            value={formData.mail}
             onChange={(e) => {
               setError('');
-              setFormData({ ...formData, username: e.target.value });
+              setFormData({ ...formData, mail: e.target.value });
             }}
             required
           />
@@ -77,6 +78,17 @@ const Login = () => {
             required
           />
           
+          <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1 }}>
+            <Button
+              variant="text"
+              size="small"
+              onClick={() => navigate('/forgot-password')}
+              sx={{ textTransform: 'none' }}
+            >
+              Забыли пароль?
+            </Button>
+          </Box>
+
           <Button
             type="submit"
             fullWidth

@@ -14,6 +14,7 @@ const MIN_PASSWORD_LENGTH = 6;
 
 const Register = () => {
   const [formData, setFormData] = useState({
+    mail: '',
     username: '',
     password: '',
     confirmPassword: '',
@@ -37,6 +38,7 @@ const Register = () => {
     
     try {
       await api.post('/auth/register', {
+        mail: formData.mail,
         username: formData.username,
         password: formData.password,
       });
@@ -65,6 +67,19 @@ const Register = () => {
         {success && <Alert severity="success" sx={{ mb: 2 }}>Регистрация успешна! Перенаправление на вход...</Alert>}
         
         <form onSubmit={handleSubmit}>
+          <TextField
+            fullWidth
+            label="Почта"
+            type="email"
+            margin="normal"
+            value={formData.mail}
+            onChange={(e) => {
+              setError('');
+              setFormData({ ...formData, mail: e.target.value });
+            }}
+            required
+            disabled={success}
+          />
           <TextField
             fullWidth
             label="Имя пользователя"
