@@ -188,15 +188,22 @@ const Transactions = () => {
     if (!dateString) return 'Не указано';
     try {
       const date = new Date(dateString);
-      const dateStr = date.toLocaleDateString('ru-RU', {
+      if (Number.isNaN(date.getTime())) return dateString;
+
+      // Всегда показываем время по Москве, чтобы не было сдвигов из-за таймзоны устройства/браузера
+      const tz = 'Europe/Moscow';
+      const parts = new Intl.DateTimeFormat('ru-RU', {
+        timeZone: tz,
         day: '2-digit',
         month: '2-digit',
         year: 'numeric',
-      });
-      const timeStr = date.toLocaleTimeString('ru-RU', {
         hour: '2-digit',
         minute: '2-digit',
-      });
+      }).formatToParts(date);
+
+      const get = (type) => parts.find((p) => p.type === type)?.value || '';
+      const dateStr = `${get('day')}.${get('month')}.${get('year')}`;
+      const timeStr = `${get('hour')}:${get('minute')}`;
       return `${dateStr} ${timeStr}`;
     } catch (e) {
       return dateString;
