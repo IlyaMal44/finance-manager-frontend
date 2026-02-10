@@ -1,8 +1,7 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8080/api';
-//const API_BASE_URL = 'http://192.168.0.111:8080/api';
-// const API_BASE_URL = 'http://83.222.16.115:8080/api';
+// CRA: локально берем из .env.development, в проде по умолчанию '/api'
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || '/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
