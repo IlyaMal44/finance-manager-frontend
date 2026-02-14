@@ -26,6 +26,7 @@ import {
   Paper,
   Autocomplete,
   Tooltip,
+  useMediaQuery,
 } from '@mui/material';
 import {
   Add,
@@ -53,6 +54,7 @@ const Budget = () => {
     category: '',
     limitAmount: '',
   });
+  const isMobile = useMediaQuery((theme) => theme.breakpoints.down('sm'));
   const [categories] = useState([
     'Продукты', 'Транспорт', 'Развлечения', 'Одежда',
     'Здоровье', 'Образование', 'Жилье', 'Коммунальные',
@@ -225,30 +227,14 @@ const Budget = () => {
   // Быстрые шаблоны бюджетов
   const quickBudgetTemplates = [
     {
-      name: 'Базовый',
+      name: 'Шаблон',
+      description: 'Быстрая настройка бюджетов по базовым категориям.',
       budgets: [
-        { category: 'Продукты', amount: 20000 },
+        { category: 'Продукты', amount: 22000 },
         { category: 'Транспорт', amount: 8000 },
-        { category: 'Жилье', amount: 15000 },
-        { category: 'Развлечения', amount: 5000 },
-      ]
-    },
-    {
-      name: 'Экономный',
-      budgets: [
-        { category: 'Продукты', amount: 15000 },
-        { category: 'Транспорт', amount: 5000 },
-        { category: 'Жилье', amount: 12000 },
-        { category: 'Развлечения', amount: 3000 },
-      ]
-    },
-    {
-      name: 'Премиум',
-      budgets: [
-        { category: 'Продукты', amount: 30000 },
-        { category: 'Транспорт', amount: 15000 },
-        { category: 'Жилье', amount: 25000 },
-        { category: 'Развлечения', amount: 10000 },
+        { category: 'Жилье', amount: 18000 },
+        { category: 'Развлечения', amount: 6000 },
+        { category: 'Связь', amount: 1500 },
       ]
     }
   ];
@@ -276,8 +262,15 @@ const Budget = () => {
     ? [editingBudget.category, ...availableCategories]
     : availableCategories;
 
+  const exceededCount = budgets.filter((b) => b.exceeded).length;
+  const totalLimitAmount = budgets.reduce((sum, b) => sum + (Number(b.limitAmount) || 0), 0);
+  const totalSpentAmount = budgets.reduce((sum, b) => sum + (Number(b.currentSpent) || 0), 0);
+  const totalRemainingAmount = totalLimitAmount - totalSpentAmount;
+  const overallUsagePct = totalLimitAmount > 0 ? (totalSpentAmount / totalLimitAmount) * 100 : 0;
+  const overallStatusColor = exceededCount > 0 ? '#F44336' : overallUsagePct > 80 ? '#FF9800' : '#4CAF50';
+
   return (
-    <Container maxWidth="xl" sx={{ py: 3 }}>
+    <Container maxWidth="xl" sx={{ py: { xs: 2, sm: 3 }, px: { xs: 1.5, sm: 3 } }}>
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
@@ -290,112 +283,247 @@ const Budget = () => {
       </Snackbar>
 
       {/* Заголовок и управление */}
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: { xs: 'stretch', sm: 'center' },
-          flexDirection: { xs: 'column', sm: 'row' },
-          gap: { xs: 2, sm: 0 },
-          mb: 4,
-        }}
+      <Paper
+        variant="outlined"
+        sx={(theme) => ({
+          mb: { xs: 3, sm: 4 },
+          p: { xs: 2, sm: 2.5 },
+          borderRadius: 3,
+          borderColor: 'divider',
+          background:
+            theme.palette.mode === 'dark'
+              ? 'linear-gradient(135deg, rgba(25,118,210,0.22), rgba(0,0,0,0) 55%)'
+              : 'linear-gradient(135deg, rgba(25,118,210,0.10), rgba(255,255,255,0) 55%)',
+        })}
       >
-        <Box>
-          <Typography variant="h4" gutterBottom sx={{ fontWeight: 600, color: 'primary.main' }}>
-            Управление бюджетами
-          </Typography>
-          <Typography variant="subtitle1" color="text.secondary">
-            Установите лимиты расходов по категориям для контроля финансов
-          </Typography>
-        </Box>
         <Box
           sx={{
             display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: { xs: 'flex-start', sm: 'center' },
             gap: 2,
             flexWrap: 'wrap',
-            justifyContent: { xs: 'flex-start', sm: 'flex-end' },
-            width: { xs: '100%', sm: 'auto' },
           }}
         >
-          <Tooltip title="Обновить">
-            <IconButton onClick={fetchData} disabled={loading}>
-              <Refresh />
-            </IconButton>
-          </Tooltip>
-          <Button 
-            variant="outlined" 
-            startIcon={<ArrowBack />}
-            onClick={() => navigate('/dashboard')}
-            sx={{ width: { xs: '100%', sm: 'auto' } }}
-          >
-            Назад к дашборду
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<Add />}
-            onClick={() => {
-              setEditingBudget(null);
-              setNewBudget({ category: '', limitAmount: '' });
-              setOpenDialog(true);
-            }}
-            sx={{ width: { xs: '100%', sm: 'auto' } }}
-          >
-            Новый бюджет
-          </Button>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography
+              variant="h4"
+              sx={{
+                fontWeight: 800,
+                color: 'primary.main',
+                fontSize: { xs: '1.6rem', sm: undefined },
+                lineHeight: 1.15,
+              }}
+            >
+              Управление бюджетами
+            </Typography>
+            <Typography variant="subtitle1" color="text.secondary" sx={{ mt: 0.5, maxWidth: 700 }}>
+              Установите лимиты расходов по категориям для контроля финансов
+            </Typography>
+          </Box>
         </Box>
-      </Box>
+
+        <Box
+          sx={{
+            mt: 2,
+            width: '100%',
+          }}
+        >
+          {isMobile ? (
+            <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
+              <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Button
+                  variant="outlined"
+                  startIcon={<ArrowBack />}
+                  onClick={() => navigate('/dashboard')}
+                  size="medium"
+                  sx={{ minHeight: 44, justifyContent: 'center' }}
+                >
+                  Назад к дашборду
+                </Button>
+                <Button
+                  variant="contained"
+                  startIcon={<Add />}
+                  onClick={() => {
+                    setEditingBudget(null);
+                    setNewBudget({ category: '', limitAmount: '' });
+                    setOpenDialog(true);
+                  }}
+                  size="medium"
+                  sx={{ minHeight: 44, justifyContent: 'center' }}
+                >
+                  Новый бюджет
+                </Button>
+              </Box>
+
+              <Tooltip title="Обновить">
+                <IconButton
+                  onClick={fetchData}
+                  disabled={loading}
+                  sx={{ mt: 0.25 }}
+                  aria-label="Обновить"
+                >
+                  <Refresh />
+                </IconButton>
+              </Tooltip>
+            </Box>
+          ) : (
+            <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+              <Button
+                variant="outlined"
+                startIcon={<ArrowBack />}
+                onClick={() => navigate('/dashboard')}
+              >
+                Назад к дашборду
+              </Button>
+              <Button
+                variant="contained"
+                startIcon={<Add />}
+                onClick={() => {
+                  setEditingBudget(null);
+                  setNewBudget({ category: '', limitAmount: '' });
+                  setOpenDialog(true);
+                }}
+              >
+                Новый бюджет
+              </Button>
+              <Tooltip title="Обновить">
+                <IconButton onClick={fetchData} disabled={loading} aria-label="Обновить">
+                  <Refresh />
+                </IconButton>
+              </Tooltip>
+            </Box>
+          )}
+        </Box>
+      </Paper>
 
       {loading && <LinearProgress sx={{ mb: 3 }} />}
 
-      <Grid container spacing={3}>
+      <Grid container spacing={{ xs: 2, sm: 3 }}>
         {/* Левая колонка: Обзор и быстрые действия */}
         <Grid item xs={12} md={4}>
           <Card sx={{ borderRadius: 2, boxShadow: 3, mb: 3 }}>
             <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                <Savings color="primary" sx={{ fontSize: 30, mr: 2 }} />
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                  Обзор бюджетов
-                </Typography>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  alignItems: { xs: 'stretch', sm: 'center' },
+                  justifyContent: 'space-between',
+                  gap: 1.25,
+                  mb: 2,
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, minWidth: 0 }}>
+                  <Box
+                    sx={(theme) => ({
+                      width: 40,
+                      height: 40,
+                      borderRadius: 2,
+                      display: 'grid',
+                      placeItems: 'center',
+                      background:
+                        theme.palette.mode === 'dark'
+                          ? 'linear-gradient(135deg, rgba(25,118,210,0.35), rgba(0,0,0,0))'
+                          : 'linear-gradient(135deg, rgba(25,118,210,0.18), rgba(255,255,255,0))',
+                      border: '1px solid',
+                      borderColor: 'divider',
+                    })}
+                  >
+                    <Savings color="primary" />
+                  </Box>
+                  <Box sx={{ minWidth: 0 }}>
+                    <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.1 }} noWrap>
+                      Обзор бюджетов
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.2 }}>
+                      Суммарно по лимитам и статусам
+                    </Typography>
+                  </Box>
+                </Box>
+
+                <Chip
+                  size="small"
+                  variant="outlined"
+                  color={exceededCount > 0 ? 'error' : 'success'}
+                  label={exceededCount > 0 ? `⚠️ Превышено: ${exceededCount}` : 'В норме'}
+                  sx={{ fontWeight: 700, alignSelf: { xs: 'flex-start', sm: 'auto' } }}
+                />
               </Box>
-              
-              <Grid container spacing={2} sx={{ mb: 2 }}>
-                <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">
+
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: '1fr 1fr',
+                  gap: 1.5,
+                  mb: 2,
+                }}
+              >
+                <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2 }}>
+                  <Typography variant="caption" color="text.secondary">
                     Всего бюджетов
                   </Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 600 }}>
+                  <Typography variant="h5" sx={{ fontWeight: 900, lineHeight: 1.1 }}>
                     {budgets.length}
                   </Typography>
-                </Grid>
-                <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">
+                </Paper>
+                <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2 }}>
+                  <Typography variant="caption" color="text.secondary">
                     Превышено
                   </Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 600, color: '#F44336' }}>
-                    {budgets.filter(b => b.exceeded).length}
+                  <Typography
+                    variant="h5"
+                    sx={{ fontWeight: 900, lineHeight: 1.1, color: exceededCount > 0 ? '#F44336' : 'text.primary' }}
+                  >
+                    {exceededCount}
                   </Typography>
-                </Grid>
-              </Grid>
-              
-              {statistics && (
-                <Box
+                </Paper>
+              </Box>
+
+              {budgets.length > 0 && (
+                <Paper
+                  variant="outlined"
                   sx={{
-                    mt: 2,
                     p: 2,
-                    bgcolor: 'action.hover',
-                    borderRadius: 1,
-                    border: '1px solid',
+                    borderRadius: 2,
                     borderColor: 'divider',
                   }}
                 >
-                  <Typography variant="body2" color="text.secondary" gutterBottom>
-                    Общие расходы: {formatCurrency(statistics.totalExpense || 0)}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Общий лимит: {formatCurrency(budgets.reduce((sum, b) => sum + b.limitAmount, 0))}
-                  </Typography>
-                </Box>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1, mb: 1 }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Потрачено / лимит
+                    </Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 800, whiteSpace: 'nowrap' }}>
+                      {formatCurrency(totalSpentAmount)} / {formatCurrency(totalLimitAmount)}
+                    </Typography>
+                  </Box>
+
+                  <LinearProgress
+                    variant="determinate"
+                    value={Math.min(overallUsagePct, 100)}
+                    sx={{
+                      height: 10,
+                      borderRadius: 5,
+                      backgroundColor: 'rgba(0,0,0,0.08)',
+                      '& .MuiLinearProgress-bar': {
+                        backgroundColor: overallStatusColor,
+                        borderRadius: 5,
+                      },
+                    }}
+                  />
+
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 1, mt: 1 }}>
+                    <Typography variant="caption" color="text.secondary">
+                      Использовано: {Number.isFinite(overallUsagePct) ? overallUsagePct.toFixed(1) : '0.0'}%
+                    </Typography>
+                    <Typography
+                      variant="caption"
+                      sx={{ fontWeight: 800, color: totalRemainingAmount >= 0 ? '#4CAF50' : '#F44336', whiteSpace: 'nowrap' }}
+                    >
+                      Осталось: {formatCurrency(totalRemainingAmount)}
+                    </Typography>
+                  </Box>
+                </Paper>
               )}
             </CardContent>
           </Card>
@@ -404,35 +532,95 @@ const Budget = () => {
           <Card sx={{ borderRadius: 2, boxShadow: 3 }}>
             <CardContent>
               <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-                Быстрые шаблоны
+                Быстрый шаблон
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Выберите готовый шаблон для быстрой настройки бюджетов
+                Один пресет для быстрой настройки бюджетов по базовым категориям.
               </Typography>
-              
-              {quickBudgetTemplates.map((template, index) => (
-                <Box key={index} sx={{ mb: 2 }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                    <Typography variant="subtitle2" sx={{ fontWeight: 500 }}>
-                      {template.name}
-                    </Typography>
-                    <Button
-                      size="small"
+
+              <Box
+                sx={{
+                  display: 'flex',
+                  gap: 1.5,
+                  flexDirection: { xs: 'column', md: 'row' },
+                  overflowX: 'visible',
+                  pb: 0,
+                  scrollSnapType: 'none',
+                }}
+              >
+                {quickBudgetTemplates.map((template, index) => {
+                  const total = template.budgets.reduce((sum, b) => sum + (b.amount || 0), 0);
+                  return (
+                    <Paper
+                      key={index}
                       variant="outlined"
-                      onClick={() => handleQuickSetBudgets(template.budgets)}
+                      sx={{
+                        p: 2,
+                        borderRadius: 2,
+                        width: { xs: '100%', md: 'auto' },
+                        minWidth: 0,
+                        flex: { xs: '1 1 auto', md: 1 },
+                        borderColor: 'divider',
+                        bgcolor: 'background.paper',
+                      }}
                     >
-                      Применить
-                    </Button>
-                  </Box>
-                  <Box sx={{ pl: 1 }}>
-                    {template.budgets.map((budget, idx) => (
-                      <Typography key={idx} variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                        {budget.category}: {formatCurrency(budget.amount)}
-                      </Typography>
-                    ))}
-                  </Box>
-                </Box>
-              ))}
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1 }}>
+                        <Box sx={{ minWidth: 0 }}>
+                          <Typography variant="subtitle1" sx={{ fontWeight: 800, lineHeight: 1.1 }}>
+                            {template.name}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }}>
+                            {template.description}
+                          </Typography>
+                        </Box>
+                        <Chip
+                          label={`Всего: ${formatCurrency(total)}`}
+                          size="small"
+                          variant="outlined"
+                          sx={{ fontWeight: 600, flexShrink: 0 }}
+                        />
+                      </Box>
+
+                      <Box sx={{ mt: 1.5 }}>
+                        {template.budgets.map((b) => (
+                          <Box
+                            key={b.category}
+                            sx={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              gap: 1,
+                              mb: 0.5,
+                            }}
+                          >
+                            <Typography
+                              variant="body2"
+                              color="text.secondary"
+                              noWrap
+                              sx={{ minWidth: 0, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}
+                            >
+                              {b.category}
+                            </Typography>
+                            <Typography variant="body2" sx={{ fontWeight: 800, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+                              {formatCurrency(b.amount)}
+                            </Typography>
+                          </Box>
+                        ))}
+                      </Box>
+
+                      <Button
+                        fullWidth
+                        size="small"
+                        variant="contained"
+                        sx={{ mt: 1.5, minHeight: 40 }}
+                        onClick={() => handleQuickSetBudgets(template.budgets)}
+                      >
+                        Применить
+                      </Button>
+                    </Paper>
+                  );
+                })}
+              </Box>
             </CardContent>
           </Card>
         </Grid>
@@ -464,6 +652,103 @@ const Budget = () => {
                   >
                     Создать первый бюджет
                   </Button>
+                </Box>
+              ) : isMobile ? (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {budgets.map((budget) => (
+                    <Paper
+                      key={budget.category}
+                      variant="outlined"
+                      sx={{
+                        p: 2,
+                        borderRadius: 2,
+                        borderLeft: '4px solid',
+                        borderLeftColor: getStatusColor(budget.usagePercentage, budget.exceeded),
+                      }}
+                    >
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
+                        <Typography sx={{ fontWeight: 800, minWidth: 0 }} noWrap>
+                          {budget.category}
+                        </Typography>
+                        <Chip
+                          label={getStatusText(budget.usagePercentage, budget.exceeded)}
+                          size="small"
+                          sx={{
+                            backgroundColor: budget.exceeded
+                              ? 'rgba(244, 67, 54, 0.1)'
+                              : budget.usagePercentage > 80
+                                ? 'rgba(255, 152, 0, 0.1)'
+                                : 'rgba(76, 175, 80, 0.1)',
+                            color: getStatusColor(budget.usagePercentage, budget.exceeded),
+                            fontWeight: 700,
+                          }}
+                        />
+                      </Box>
+
+                      <LinearProgress
+                        variant="determinate"
+                        value={Math.min(budget.usagePercentage, 100)}
+                        sx={{
+                          height: 8,
+                          borderRadius: 4,
+                          mt: 1.25,
+                          backgroundColor: 'rgba(0,0,0,0.08)',
+                          '& .MuiLinearProgress-bar': {
+                            backgroundColor: getStatusColor(budget.usagePercentage, budget.exceeded),
+                            borderRadius: 4,
+                          },
+                        }}
+                      />
+
+                      <Box sx={{ mt: 1.25, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
+                        <Box>
+                          <Typography variant="caption" color="text.secondary">
+                            Лимит
+                          </Typography>
+                          <Typography sx={{ fontWeight: 800 }}>
+                            {formatCurrency(budget.limitAmount)}
+                          </Typography>
+                        </Box>
+                        <Box>
+                          <Typography variant="caption" color="text.secondary">
+                            Потрачено
+                          </Typography>
+                          <Typography sx={{ fontWeight: 800, color: '#F44336' }}>
+                            {formatCurrency(budget.currentSpent)}
+                          </Typography>
+                        </Box>
+                        <Box>
+                          <Typography variant="caption" color="text.secondary">
+                            Осталось
+                          </Typography>
+                          <Typography sx={{ fontWeight: 900, color: budget.remaining >= 0 ? '#4CAF50' : '#F44336' }}>
+                            {formatCurrency(budget.remaining)}
+                          </Typography>
+                        </Box>
+                        <Box>
+                          <Typography variant="caption" color="text.secondary">
+                            Использовано
+                          </Typography>
+                          <Typography sx={{ fontWeight: 900 }}>
+                            {budget.usagePercentage.toFixed(1)}%
+                          </Typography>
+                        </Box>
+                      </Box>
+
+                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5, mt: 1.5, pt: 1, borderTop: 1, borderColor: 'divider' }}>
+                        <Tooltip title="Редактировать">
+                          <IconButton size="small" onClick={() => handleEditBudget(budget)} color="primary" sx={{ p: 0.5 }}>
+                            <Edit fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Удалить">
+                          <IconButton size="small" onClick={() => handleDeleteBudget(budget.category)} color="error" sx={{ p: 0.5 }}>
+                            <Delete fontSize="small" />
+                          </IconButton>
+                        </Tooltip>
+                      </Box>
+                    </Paper>
+                  ))}
                 </Box>
               ) : (
                 <TableContainer component={Paper} variant="outlined">
@@ -588,7 +873,13 @@ const Budget = () => {
       </Grid>
 
       {/* Диалог создания/редактирования бюджета */}
-      <Dialog open={openDialog} onClose={() => setOpenDialog(false)} maxWidth="sm" fullWidth>
+      <Dialog
+        open={openDialog}
+        onClose={() => setOpenDialog(false)}
+        maxWidth="sm"
+        fullWidth
+        fullScreen={isMobile}
+      >
         <DialogTitle>
           {editingBudget ? 'Редактировать бюджет' : 'Новый бюджет'}
         </DialogTitle>
