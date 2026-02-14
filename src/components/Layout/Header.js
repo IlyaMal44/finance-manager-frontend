@@ -13,10 +13,11 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { DarkMode, HelpOutline, LightMode } from '@mui/icons-material';
+import { DarkMode, HelpOutline, LightMode, Feedback } from '@mui/icons-material';
 import MenuIcon from '@mui/icons-material/Menu';
 
 import HelpDialog from '../Help/HelpDialog';
+import FeedbackDialog from '../Feedback/FeedbackDialog';
 
 const NAV_ITEMS = [
   { label: 'Бюджеты', to: '/budgets' },
@@ -31,6 +32,7 @@ const Header = ({ mode, toggleMode }) => {
   const isMobile = useMediaQuery((theme) => theme.breakpoints.down('sm'));
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   
   // Определяем активный раздел
   const isActive = (path) => {
@@ -65,6 +67,11 @@ const Header = ({ mode, toggleMode }) => {
   const handleOpenHelp = () => {
     handleCloseMenu();
     setHelpOpen(true);
+  };
+
+  const handleOpenFeedback = () => {
+    handleCloseMenu();
+    setFeedbackOpen(true);
   };
 
   const handleNavigate = (to) => {
@@ -153,6 +160,16 @@ const Header = ({ mode, toggleMode }) => {
                   Помощь
                 </Button>
               </Tooltip>
+              <Tooltip title="Обратная связь">
+                <Button
+                  color="inherit"
+                  onClick={handleOpenFeedback}
+                  startIcon={<Feedback />}
+                  aria-label="Обратная связь"
+                >
+                  Обратная связь
+                </Button>
+              </Tooltip>
               <Button color="inherit" onClick={handleLogout}>
                 Выйти
               </Button>
@@ -191,6 +208,7 @@ const Header = ({ mode, toggleMode }) => {
             })}
             <Divider />
             <MenuItem onClick={handleOpenHelp}>Помощь</MenuItem>
+            <MenuItem onClick={handleOpenFeedback}>Обратная связь</MenuItem>
             <MenuItem onClick={handleLogout}>Выйти</MenuItem>
           </Menu>
         )}
@@ -198,6 +216,7 @@ const Header = ({ mode, toggleMode }) => {
       </AppBar>
 
       <HelpDialog open={helpOpen} onClose={() => setHelpOpen(false)} />
+      <FeedbackDialog open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
     </>
   );
 };
