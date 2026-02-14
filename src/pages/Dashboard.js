@@ -286,6 +286,24 @@ const Dashboard = () => {
     }).format(amount || 0);
   };
 
+  const getTopCategoryName = (categoryMap) => {
+    if (!categoryMap || typeof categoryMap !== 'object') return '';
+    let topName = '';
+    let topValue = -Infinity;
+    for (const [name, value] of Object.entries(categoryMap)) {
+      const v = typeof value === 'number' ? value : Number(value);
+      if (!Number.isFinite(v)) continue;
+      if (v > topValue) {
+        topValue = v;
+        topName = name;
+      }
+    }
+    return topName;
+  };
+
+  const topExpenseCategory = getTopCategoryName(statistics?.expenseByCategory);
+  const topIncomeCategory = getTopCategoryName(statistics?.incomeByCategory);
+
   const checkBudgetExceeded = () => {
     if (!statistics?.budgetStatus) return false;
     return Object.values(statistics.budgetStatus).some(budget => budget.exceeded);
@@ -325,50 +343,49 @@ const Dashboard = () => {
       </Snackbar>
 
       {/* Заголовок с информацией о пользователе - БЕЗ ID кошелька */}
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: { xs: 'flex-start', sm: 'center' },
-          flexWrap: 'wrap',
-          gap: { xs: 1.5, sm: 2 },
-          mb: { xs: 2.5, sm: 4 },
-        }}
+      <Paper
+        variant="outlined"
+        sx={(theme) => ({
+          mb: { xs: 3, sm: 4 },
+          p: { xs: 2, sm: 2.5 },
+          borderRadius: 3,
+          borderColor: 'divider',
+          background:
+            theme.palette.mode === 'dark'
+              ? 'linear-gradient(135deg, rgba(25,118,210,0.22), rgba(0,0,0,0) 55%)'
+              : 'linear-gradient(135deg, rgba(25,118,210,0.10), rgba(255,255,255,0) 55%)',
+        })}
       >
-        <Box sx={{ width: { xs: '100%', sm: 'auto' } }}>
-          <Typography
-            variant="h4"
-            gutterBottom
-            sx={{
-              fontWeight: 700,
-              color: 'primary.main',
-              fontSize: { xs: '1.6rem', sm: undefined },
-              lineHeight: 1.15,
-              mb: { xs: 0.5, sm: 0.5 },
-            }}
-          >
-            Добро пожаловать, {user.username}!
-          </Typography>
-          <Typography variant="subtitle1" color="text.secondary" sx={{ maxWidth: 560 }}>
-            Управляйте вашими финансами эффективно
-          </Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2, flexWrap: 'wrap' }}>
+          <Box sx={{ minWidth: 0 }}>
+            <Typography
+              variant="h4"
+              sx={{
+                fontWeight: 800,
+                color: 'primary.main',
+                fontSize: { xs: '1.6rem', sm: undefined },
+                lineHeight: 1.15,
+              }}
+            >
+              Добро пожаловать, {user.username}!
+            </Typography>
+            <Typography variant="subtitle1" color="text.secondary" sx={{ maxWidth: 560, mt: 0.5 }}>
+              Управляйте вашими финансами эффективно
+            </Typography>
+          </Box>
         </Box>
-        {/* На мобилке отделяем действия в отдельную "панель" — так визуально чище */}
+
         <Box
           sx={{
-            width: '100%',
+            mt: 2,
+            pt: 1.75,
+            borderTop: 1,
+            borderColor: 'divider',
             display: 'flex',
             justifyContent: 'space-between',
             alignItems: 'center',
-            flexWrap: 'wrap',
             gap: 1,
-            mt: { xs: 0.5, sm: 0 },
-            px: { xs: 1, sm: 0 },
-            py: { xs: 0.75, sm: 0 },
-            borderRadius: { xs: 2, sm: 0 },
-            bgcolor: { xs: 'action.hover', sm: 'transparent' },
-            border: { xs: '1px solid', sm: 'none' },
-            borderColor: { xs: 'divider', sm: 'transparent' },
+            flexWrap: 'wrap',
           }}
         >
           <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
@@ -379,9 +396,11 @@ const Dashboard = () => {
                 color="error"
                 variant="outlined"
                 size="small"
+                sx={{ fontWeight: 600 }}
               />
             )}
           </Box>
+
           <Box sx={{ display: 'flex', gap: 0.75, alignItems: 'center' }}>
             <Tooltip title="Экспортировать данные">
               <IconButton 
@@ -400,29 +419,68 @@ const Dashboard = () => {
             </Tooltip>
           </Box>
         </Box>
-      </Box>
+      </Paper>
 
       {loading && <LinearProgress sx={{ mb: 3 }} />}
 
       <Grid container spacing={{ xs: 1.5, sm: 3 }} sx={{ mb: { xs: 3, sm: 4 } }}>
         <Grid item xs={6} sm={6} md={3}>
-          <Card sx={{ 
-            height: '100%', 
-            bgcolor: 'primary.main',
-            color: 'white',
-            borderRadius: 2,
-            boxShadow: 3,
-          }}>
-            <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: { xs: 1, sm: 2 } }}>
-                <AccountBalanceWallet sx={{ fontSize: { xs: 32, sm: 40 }, mr: { xs: 1.25, sm: 2 } }} />
-                <Box>
+          <Card
+            sx={(theme) => ({
+              height: '100%',
+              borderRadius: 2.5,
+              boxShadow: 3,
+              color: 'common.white',
+              overflow: 'hidden',
+              background:
+                theme.palette.mode === 'dark'
+                  ? 'linear-gradient(135deg, #1565c0 0%, #1976d2 45%, #0d47a1 100%)'
+                  : 'linear-gradient(135deg, #1976d2 0%, #1e88e5 45%, #1565c0 100%)',
+              position: 'relative',
+              '&:before': {
+                content: '""',
+                position: 'absolute',
+                right: -22,
+                top: -22,
+                width: 90,
+                height: 90,
+                borderRadius: '50%',
+                background: 'rgba(255,255,255,0.18)',
+              },
+            })}
+          >
+            <CardContent sx={{ p: { xs: 2, sm: 2.5 }, position: 'relative' }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1 }}>
+                <Box sx={{ minWidth: 0 }}>
                   <Typography variant="subtitle2" sx={{ opacity: 0.9 }}>
                     Общий баланс
                   </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 800, fontSize: { xs: '1.15rem', sm: '1.8rem' }, lineHeight: 1.2 }}>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontWeight: 900,
+                      fontSize: { xs: '1.25rem', sm: '1.8rem' },
+                      lineHeight: 1.15,
+                      mt: 0.5,
+                    }}
+                  >
                     {statistics ? formatCurrency(statistics.balance) : '0 ₽'}
                   </Typography>
+                  <Typography variant="caption" sx={{ opacity: 0.9, display: 'block', mt: 0.5 }}>
+                    Доступно сейчас
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{
+                    width: { xs: 34, sm: 40 },
+                    height: { xs: 34, sm: 40 },
+                    borderRadius: 2,
+                    bgcolor: 'rgba(255,255,255,0.18)',
+                    display: 'grid',
+                    placeItems: 'center',
+                  }}
+                >
+                  <AccountBalanceWallet sx={{ fontSize: { xs: 22, sm: 26 } }} />
                 </Box>
               </Box>
             </CardContent>
@@ -430,69 +488,127 @@ const Dashboard = () => {
         </Grid>
 
         <Grid item xs={6} sm={6} md={3}>
-          <Card sx={{ 
-            height: '100%',
-            borderLeft: '4px solid #4CAF50',
-            borderRadius: 2,
-            boxShadow: 2,
-          }}>
+          <Card
+            sx={(theme) => ({
+              height: '100%',
+              borderRadius: 2.5,
+              boxShadow: 2,
+              border: '1px solid',
+              borderColor: 'divider',
+              background:
+                theme.palette.mode === 'dark'
+                  ? 'linear-gradient(135deg, rgba(76,175,80,0.18), rgba(0,0,0,0) 60%)'
+                  : 'linear-gradient(135deg, rgba(76,175,80,0.14), rgba(255,255,255,0) 60%)',
+            })}
+          >
             <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: { xs: 1, sm: 2 } }}>
-                <ArrowUpward sx={{ fontSize: { xs: 26, sm: 30 }, color: '#4CAF50', mr: { xs: 1.25, sm: 2 } }} />
-                <Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1 }}>
+                <Box sx={{ minWidth: 0 }}>
                   <Typography variant="subtitle2" color="text.secondary">
                     Общие доходы
                   </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 800, color: '#4CAF50', fontSize: { xs: '1.1rem', sm: '1.5rem' }, lineHeight: 1.2 }}>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontWeight: 900,
+                      color: '#4CAF50',
+                      fontSize: { xs: '1.15rem', sm: '1.5rem' },
+                      lineHeight: 1.15,
+                      mt: 0.5,
+                    }}
+                  >
                     {statistics ? formatCurrency(statistics.totalIncome) : '0 ₽'}
                   </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }} noWrap>
+                    {topIncomeCategory ? `Топ: ${topIncomeCategory}` : 'Все поступления'}
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{
+                    width: { xs: 34, sm: 40 },
+                    height: { xs: 34, sm: 40 },
+                    borderRadius: 2,
+                    bgcolor: 'rgba(76,175,80,0.18)',
+                    display: 'grid',
+                    placeItems: 'center',
+                  }}
+                >
+                  <ArrowUpward sx={{ fontSize: { xs: 22, sm: 26 }, color: '#4CAF50' }} />
                 </Box>
               </Box>
-              <Typography variant="body2" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
-                <AttachMoney sx={{ fontSize: 16, verticalAlign: 'middle', mr: 0.5 }} />
-                Все поступления
-              </Typography>
             </CardContent>
           </Card>
         </Grid>
 
         <Grid item xs={6} sm={6} md={3}>
-          <Card sx={{ 
-            height: '100%',
-            borderLeft: '4px solid #F44336',
-            borderRadius: 2,
-            boxShadow: 2,
-          }}>
+          <Card
+            sx={(theme) => ({
+              height: '100%',
+              borderRadius: 2.5,
+              boxShadow: 2,
+              border: '1px solid',
+              borderColor: 'divider',
+              background:
+                theme.palette.mode === 'dark'
+                  ? 'linear-gradient(135deg, rgba(244,67,54,0.18), rgba(0,0,0,0) 60%)'
+                  : 'linear-gradient(135deg, rgba(244,67,54,0.14), rgba(255,255,255,0) 60%)',
+            })}
+          >
             <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: { xs: 1, sm: 2 } }}>
-                <ArrowDownward sx={{ fontSize: { xs: 26, sm: 30 }, color: '#F44336', mr: { xs: 1.25, sm: 2 } }} />
-                <Box>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1 }}>
+                <Box sx={{ minWidth: 0 }}>
                   <Typography variant="subtitle2" color="text.secondary">
                     Общие расходы
                   </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 800, color: '#F44336', fontSize: { xs: '1.1rem', sm: '1.5rem' }, lineHeight: 1.2 }}>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontWeight: 900,
+                      color: '#F44336',
+                      fontSize: { xs: '1.15rem', sm: '1.5rem' },
+                      lineHeight: 1.15,
+                      mt: 0.5,
+                    }}
+                  >
                     {statistics ? formatCurrency(statistics.totalExpense) : '0 ₽'}
                   </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }} noWrap>
+                    {topExpenseCategory ? `Топ: ${topExpenseCategory}` : 'Все траты'}
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{
+                    width: { xs: 34, sm: 40 },
+                    height: { xs: 34, sm: 40 },
+                    borderRadius: 2,
+                    bgcolor: 'rgba(244,67,54,0.18)',
+                    display: 'grid',
+                    placeItems: 'center',
+                  }}
+                >
+                  <ArrowDownward sx={{ fontSize: { xs: 22, sm: 26 }, color: '#F44336' }} />
                 </Box>
               </Box>
-              <Typography variant="body2" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
-                <MoneyOff sx={{ fontSize: 16, verticalAlign: 'middle', mr: 0.5 }} />
-                Все траты
-              </Typography>
             </CardContent>
           </Card>
         </Grid>
 
         <Grid item xs={6} sm={6} md={3}>
-          <Card sx={{ 
-            height: '100%',
-            borderLeft: '4px solid #9C27B0',
-            borderRadius: 2,
-            boxShadow: 2,
-          }}>
+          <Card
+            sx={(theme) => ({
+              height: '100%',
+              borderRadius: 2.5,
+              boxShadow: 2,
+              border: '1px solid',
+              borderColor: 'divider',
+              background:
+                theme.palette.mode === 'dark'
+                  ? 'linear-gradient(135deg, rgba(156,39,176,0.20), rgba(0,0,0,0) 60%)'
+                  : 'linear-gradient(135deg, rgba(156,39,176,0.14), rgba(255,255,255,0) 60%)',
+            })}
+          >
             <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: { xs: 1, sm: 2 } }}>
-                <Category sx={{ fontSize: { xs: 30, sm: 30 }, color: '#9C27B0', mr: { xs: 1.1, sm: 2 } }} />
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1 }}>
                 <Box sx={{ minWidth: 0 }}>
                   <Typography
                     variant="subtitle2"
@@ -507,14 +623,35 @@ const Dashboard = () => {
                       Категории
                     </Box>
                   </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: 800, color: '#9C27B0', fontSize: { xs: '1.1rem', sm: '1.5rem' }, lineHeight: 1.2 }}>
+                  <Typography
+                    variant="h6"
+                    sx={{
+                      fontWeight: 900,
+                      color: '#9C27B0',
+                      fontSize: { xs: '1.15rem', sm: '1.5rem' },
+                      lineHeight: 1.15,
+                      mt: 0.5,
+                    }}
+                  >
                     {statistics?.expenseByCategory ? Object.keys(statistics.expenseByCategory).length : 0}
                   </Typography>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }} noWrap>
+                    {topExpenseCategory ? `Топ: ${topExpenseCategory}` : 'Категории с тратами'}
+                  </Typography>
+                </Box>
+                <Box
+                  sx={{
+                    width: { xs: 34, sm: 40 },
+                    height: { xs: 34, sm: 40 },
+                    borderRadius: 2,
+                    bgcolor: 'rgba(156,39,176,0.18)',
+                    display: 'grid',
+                    placeItems: 'center',
+                  }}
+                >
+                  <Category sx={{ fontSize: { xs: 22, sm: 26 }, color: '#9C27B0' }} />
                 </Box>
               </Box>
-              <Typography variant="body2" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
-                Категории с тратами
-              </Typography>
             </CardContent>
           </Card>
         </Grid>
@@ -522,7 +659,7 @@ const Dashboard = () => {
 
       <Grid container spacing={3}>
         {/* Левая колонка: Новая транзакция */}
-        <Grid item xs={12} md={5}>
+        <Grid item xs={12} md={6}>
           <Card sx={{ borderRadius: 2, boxShadow: 3, overflow: 'visible' }}>
             <CardContent>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -745,7 +882,7 @@ const Dashboard = () => {
         </Grid>
 
         {/* Правая колонка: Статистика */}
-        <Grid item xs={12} md={7}>
+        <Grid item xs={12} md={6}>
           <Grid container spacing={3}>
             {/* Распределение расходов */}
             <Grid item xs={12} md={6}>
