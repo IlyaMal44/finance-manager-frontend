@@ -27,6 +27,9 @@ import {
   Autocomplete,
   Tooltip,
   useMediaQuery,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
 } from '@mui/material';
 import {
   Add,
@@ -37,6 +40,7 @@ import {
   Category,
   Refresh,
   ArrowBack,
+  ExpandMore,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axiosConfig';
@@ -55,6 +59,8 @@ const Budget = () => {
     limitAmount: '',
   });
   const isMobile = useMediaQuery((theme) => theme.breakpoints.down('sm'));
+  const [budgetQuery, setBudgetQuery] = useState('');
+  const [budgetFilter, setBudgetFilter] = useState('all'); // all | exceeded | near
   const [categories] = useState([
     'Продукты', 'Транспорт', 'Развлечения', 'Одежда',
     'Здоровье', 'Образование', 'Жилье', 'Коммунальные',
@@ -268,6 +274,27 @@ const Budget = () => {
   const totalRemainingAmount = totalLimitAmount - totalSpentAmount;
   const overallUsagePct = totalLimitAmount > 0 ? (totalSpentAmount / totalLimitAmount) * 100 : 0;
   const overallStatusColor = exceededCount > 0 ? '#F44336' : overallUsagePct > 80 ? '#FF9800' : '#4CAF50';
+
+  const normalizedBudgetQuery = (budgetQuery || '').trim().toLowerCase();
+  const budgetsSorted = [...budgets].sort((a, b) => {
+    // Сначала превышенные, затем по % использования, затем по алфавиту
+    if (!!a.exceeded !== !!b.exceeded) return a.exceeded ? -1 : 1;
+    const ap = Number(a.usagePercentage) || 0;
+    const bp = Number(b.usagePercentage) || 0;
+    if (bp !== ap) return bp - ap;
+    return String(a.category || '').localeCompare(String(b.category || ''), 'ru');
+  });
+
+  const budgetsFiltered = budgetsSorted.filter((b) => {
+    const cat = String(b.category || '').toLowerCase();
+    const matchesQuery = !normalizedBudgetQuery || cat.includes(normalizedBudgetQuery);
+    const pct = Number(b.usagePercentage) || 0;
+    const matchesFilter =
+      budgetFilter === 'all' ||
+      (budgetFilter === 'exceeded' && !!b.exceeded) ||
+      (budgetFilter === 'near' && !b.exceeded && pct >= 80);
+    return matchesQuery && matchesFilter;
+  });
 
   return (
     <Container maxWidth="xl" sx={{ py: { xs: 2, sm: 3 }, px: { xs: 1.5, sm: 3 } }}>
@@ -654,101 +681,145 @@ const Budget = () => {
                   </Button>
                 </Box>
               ) : isMobile ? (
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  {budgets.map((budget) => (
-                    <Paper
-                      key={budget.category}
-                      variant="outlined"
-                      sx={{
-                        p: 2,
-                        borderRadius: 2,
-                        borderLeft: '4px solid',
-                        borderLeftColor: getStatusColor(budget.usagePercentage, budget.exceeded),
-                      }}
-                    >
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
-                        <Typography sx={{ fontWeight: 800, minWidth: 0 }} noWrap>
-                          {budget.category}
-                        </Typography>
-                        <Chip
-                          label={getStatusText(budget.usagePercentage, budget.exceeded)}
-                          size="small"
-                          sx={{
-                            backgroundColor: budget.exceeded
-                              ? 'rgba(244, 67, 54, 0.1)'
-                              : budget.usagePercentage > 80
-                                ? 'rgba(255, 152, 0, 0.1)'
-                                : 'rgba(76, 175, 80, 0.1)',
-                            color: getStatusColor(budget.usagePercentage, budget.exceeded),
-                            fontWeight: 700,
-                          }}
-                        />
-                      </Box>
-
-                      <LinearProgress
-                        variant="determinate"
-                        value={Math.min(budget.usagePercentage, 100)}
-                        sx={{
-                          height: 8,
-                          borderRadius: 4,
-                          mt: 1.25,
-                          backgroundColor: 'rgba(0,0,0,0.08)',
-                          '& .MuiLinearProgress-bar': {
-                            backgroundColor: getStatusColor(budget.usagePercentage, budget.exceeded),
-                            borderRadius: 4,
-                          },
-                        }}
+                <Box>
+                  <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 1, mb: 2 }}>
+                    <TextField
+                      value={budgetQuery}
+                      onChange={(e) => setBudgetQuery(e.target.value)}
+                      size="small"
+                      placeholder="Поиск по категории…"
+                      fullWidth
+                    />
+                    <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+                      <Chip
+                        label={`Все (${budgets.length})`}
+                        variant={budgetFilter === 'all' ? 'filled' : 'outlined'}
+                        color={budgetFilter === 'all' ? 'primary' : 'default'}
+                        size="small"
+                        onClick={() => setBudgetFilter('all')}
                       />
+                      <Chip
+                        label={`Превышено (${exceededCount})`}
+                        variant={budgetFilter === 'exceeded' ? 'filled' : 'outlined'}
+                        color={budgetFilter === 'exceeded' ? 'error' : 'default'}
+                        size="small"
+                        onClick={() => setBudgetFilter('exceeded')}
+                      />
+                      <Chip
+                        label="Почти (80%+)"
+                        variant={budgetFilter === 'near' ? 'filled' : 'outlined'}
+                        color={budgetFilter === 'near' ? 'warning' : 'default'}
+                        size="small"
+                        onClick={() => setBudgetFilter('near')}
+                      />
+                    </Box>
+                  </Box>
 
-                      <Box sx={{ mt: 1.25, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
-                        <Box>
-                          <Typography variant="caption" color="text.secondary">
-                            Лимит
-                          </Typography>
-                          <Typography sx={{ fontWeight: 800 }}>
-                            {formatCurrency(budget.limitAmount)}
-                          </Typography>
-                        </Box>
-                        <Box>
-                          <Typography variant="caption" color="text.secondary">
-                            Потрачено
-                          </Typography>
-                          <Typography sx={{ fontWeight: 800, color: '#F44336' }}>
-                            {formatCurrency(budget.currentSpent)}
-                          </Typography>
-                        </Box>
-                        <Box>
-                          <Typography variant="caption" color="text.secondary">
-                            Осталось
-                          </Typography>
-                          <Typography sx={{ fontWeight: 900, color: budget.remaining >= 0 ? '#4CAF50' : '#F44336' }}>
-                            {formatCurrency(budget.remaining)}
-                          </Typography>
-                        </Box>
-                        <Box>
-                          <Typography variant="caption" color="text.secondary">
-                            Использовано
-                          </Typography>
-                          <Typography sx={{ fontWeight: 900 }}>
-                            {budget.usagePercentage.toFixed(1)}%
-                          </Typography>
-                        </Box>
-                      </Box>
-
-                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5, mt: 1.5, pt: 1, borderTop: 1, borderColor: 'divider' }}>
-                        <Tooltip title="Редактировать">
-                          <IconButton size="small" onClick={() => handleEditBudget(budget)} color="primary" sx={{ p: 0.5 }}>
-                            <Edit fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Удалить">
-                          <IconButton size="small" onClick={() => handleDeleteBudget(budget.category)} color="error" sx={{ p: 0.5 }}>
-                            <Delete fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </Box>
+                  {budgetsFiltered.length === 0 ? (
+                    <Paper variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                      <Typography color="text.secondary">
+                        Ничего не найдено.
+                      </Typography>
                     </Paper>
-                  ))}
+                  ) : (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      {budgetsFiltered.map((budget) => {
+                        const statusColor = getStatusColor(budget.usagePercentage, budget.exceeded);
+                        return (
+                          <Accordion
+                            key={budget.category}
+                            disableGutters
+                            elevation={0}
+                            sx={{
+                              border: '1px solid',
+                              borderColor: 'divider',
+                              borderRadius: 2,
+                              overflow: 'hidden',
+                              '&:before': { display: 'none' },
+                            }}
+                          >
+                            <AccordionSummary expandIcon={<ExpandMore />}>
+                              <Box sx={{ width: '100%', display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Box
+                                  sx={{
+                                    width: 6,
+                                    alignSelf: 'stretch',
+                                    borderRadius: 1,
+                                    bgcolor: statusColor,
+                                  }}
+                                />
+                                <Box sx={{ minWidth: 0, flex: 1 }}>
+                                  <Typography sx={{ fontWeight: 900 }} noWrap>
+                                    {budget.category}
+                                  </Typography>
+                                  <Typography variant="caption" color="text.secondary">
+                                    Осталось: {formatCurrency(budget.remaining)} • {budget.usagePercentage.toFixed(0)}%
+                                  </Typography>
+                                </Box>
+                                <Chip
+                                  label={getStatusText(budget.usagePercentage, budget.exceeded)}
+                                  size="small"
+                                  sx={{
+                                    backgroundColor: budget.exceeded
+                                      ? 'rgba(244, 67, 54, 0.1)'
+                                      : budget.usagePercentage > 80
+                                        ? 'rgba(255, 152, 0, 0.1)'
+                                        : 'rgba(76, 175, 80, 0.1)',
+                                    color: statusColor,
+                                    fontWeight: 800,
+                                  }}
+                                />
+                              </Box>
+                            </AccordionSummary>
+                            <AccordionDetails sx={{ pt: 0 }}>
+                              <LinearProgress
+                                variant="determinate"
+                                value={Math.min(budget.usagePercentage, 100)}
+                                sx={{
+                                  height: 8,
+                                  borderRadius: 4,
+                                  mb: 1.25,
+                                  backgroundColor: 'rgba(0,0,0,0.08)',
+                                  '& .MuiLinearProgress-bar': {
+                                    backgroundColor: statusColor,
+                                    borderRadius: 4,
+                                  },
+                                }}
+                              />
+
+                              <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
+                                <Box>
+                                  <Typography variant="caption" color="text.secondary">
+                                    Лимит
+                                  </Typography>
+                                  <Typography sx={{ fontWeight: 900 }}>
+                                    {formatCurrency(budget.limitAmount)}
+                                  </Typography>
+                                </Box>
+                                <Box>
+                                  <Typography variant="caption" color="text.secondary">
+                                    Потрачено
+                                  </Typography>
+                                  <Typography sx={{ fontWeight: 900, color: '#F44336' }}>
+                                    {formatCurrency(budget.currentSpent)}
+                                  </Typography>
+                                </Box>
+                              </Box>
+
+                              <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 0.5, mt: 1.25, pt: 1, borderTop: 1, borderColor: 'divider' }}>
+                                <Button size="small" variant="outlined" onClick={() => handleEditBudget(budget)}>
+                                  Изменить
+                                </Button>
+                                <Button size="small" color="error" variant="outlined" onClick={() => handleDeleteBudget(budget.category)}>
+                                  Удалить
+                                </Button>
+                              </Box>
+                            </AccordionDetails>
+                          </Accordion>
+                        );
+                      })}
+                    </Box>
+                  )}
                 </Box>
               ) : (
                 <TableContainer component={Paper} variant="outlined">
