@@ -62,44 +62,51 @@ const Register = () => {
       const errorResponse = err.response?.data;
       const status = err.response?.status;
       
+      const responseMessage = (errorResponse?.message || errorResponse?.error || '').toLowerCase();
+      
       // Обработка различных типов ошибок
       let errorMessage = 'Ошибка регистрации';
       
       // Статус 409 - конфликт (почта уже существует)
       if (status === 409) {
-        const responseMessage = errorResponse?.message || errorResponse?.error || '';
-        
-        // Проверяем различные варианты сообщений от бэкенда
-        if (responseMessage.toLowerCase().includes('mail') || 
-            responseMessage.toLowerCase().includes('почт') ||
-            responseMessage.toLowerCase().includes('email') ||
-            responseMessage.toLowerCase().includes('exists') ||
-            responseMessage.toLowerCase().includes('уже') ||
-            responseMessage.toLowerCase().includes('зарегистрирован')) {
+        if (responseMessage.includes('mail') || 
+            responseMessage.includes('почт') ||
+            responseMessage.includes('email') ||
+            responseMessage.includes('exists') ||
+            responseMessage.includes('уже') ||
+            responseMessage.includes('зарегистрирован')) {
           errorMessage = 'Такая почта уже зарегистрирована. Используйте другую почту или войдите в систему.';
         } else {
           // Если сообщение не содержит ключевых слов, но статус 409 - скорее всего конфликт с почтой
           errorMessage = 'Такая почта уже зарегистрирована. Используйте другую почту или войдите в систему.';
         }
-      } else if (status === 400) {
+      } 
+      // Проверка на почту в других статусах
+      else if (responseMessage.includes('mail') || 
+               responseMessage.includes('почт') ||
+               responseMessage.includes('email') ||
+               responseMessage.includes('exists')) {
+        errorMessage = 'Такая почта уже зарегистрирована. Используйте другую почту или войдите в систему.';
+      } 
+      else if (status === 400) {
         // Ошибка валидации
         errorMessage = errorResponse?.message || 
                       errorResponse?.error || 
                       'Проверьте правильность введенных данных';
-      } else if (status === 500) {
+      } 
+      else if (status === 500) {
         // Серверная ошибка - проверяем сообщение
         const serverMessage = errorResponse?.message || errorResponse?.error || '';
-        if (serverMessage.toLowerCase().includes('mail') || 
-            serverMessage.toLowerCase().includes('почт') ||
-            serverMessage.toLowerCase().includes('email') ||
-            serverMessage.toLowerCase().includes('exists')) {
-          errorMessage = 'Такая почта уже зарегистрирована. Используйте другую почту или войдите в систему.';
+        if (serverMessage) {
+          errorMessage = serverMessage;
         } else {
-          errorMessage = serverMessage || 'Внутренняя ошибка сервера. Попробуйте позже.';
+          errorMessage = 'Внутренняя ошибка сервера. Попробуйте позже.';
         }
-      } else if (errorResponse?.message) {
+      } 
+      else if (errorResponse?.message) {
         errorMessage = errorResponse.message;
-      } else if (errorResponse?.error) {
+      } 
+      else if (errorResponse?.error) {
         // Если пришло просто "Conflict" или другое техническое сообщение
         if (errorResponse.error === 'Conflict' || errorResponse.error === 'CONFLICT') {
           errorMessage = 'Такая почта уже зарегистрирована. Используйте другую почту или войдите в систему.';
