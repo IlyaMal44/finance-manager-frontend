@@ -19,6 +19,7 @@ import {
   Alert,
   Snackbar,
   Autocomplete,
+  useMediaQuery,
 } from '@mui/material';
 import {
   AccountBalanceWallet,
@@ -41,6 +42,7 @@ const Dashboard = () => {
   const [statistics, setStatistics] = useState(null);
   const [loading, setLoading] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const isMobile = useMediaQuery((theme) => theme.breakpoints.down('sm'));
   const [transaction, setTransaction] = useState({
     type: 'EXPENSE',
     amount: '',
@@ -286,6 +288,18 @@ const Dashboard = () => {
     }).format(amount || 0);
   };
 
+  const formatCurrencyForTile = (amount) => {
+    const value = typeof amount === 'number' ? amount : Number(amount);
+    if (!Number.isFinite(value)) return '0 ₽';
+    // Для плиток показываем полное число, но без копеек — так короче и лучше помещается.
+    return new Intl.NumberFormat('ru-RU', {
+      style: 'currency',
+      currency: 'RUB',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(value);
+  };
+
   const getTopCategoryName = (categoryMap) => {
     if (!categoryMap || typeof categoryMap !== 'object') return '';
     let topName = '';
@@ -423,8 +437,14 @@ const Dashboard = () => {
 
       {loading && <LinearProgress sx={{ mb: 3 }} />}
 
-      <Grid container spacing={{ xs: 1.5, sm: 3 }} sx={{ mb: { xs: 3, sm: 4 } }}>
-        <Grid item xs={6} sm={6} md={3}>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', md: 'repeat(4, minmax(0, 1fr))' },
+          gap: { xs: 1.5, sm: 3 },
+          mb: { xs: 3, sm: 4 },
+        }}
+      >
           <Card
             sx={(theme) => ({
               height: '100%',
@@ -459,12 +479,17 @@ const Dashboard = () => {
                     variant="h6"
                     sx={{
                       fontWeight: 900,
-                      fontSize: { xs: '1.25rem', sm: '1.8rem' },
+                      fontSize: { xs: '1.15rem', sm: '1.8rem' },
                       lineHeight: 1.15,
                       mt: 0.5,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      fontVariantNumeric: 'tabular-nums',
                     }}
+                    title={statistics ? formatCurrency(statistics.balance) : '0 ₽'}
                   >
-                    {statistics ? formatCurrency(statistics.balance) : '0 ₽'}
+                    {statistics ? formatCurrencyForTile(statistics.balance) : '0 ₽'}
                   </Typography>
                   <Typography variant="caption" sx={{ opacity: 0.9, display: 'block', mt: 0.5 }}>
                     Доступно сейчас
@@ -485,9 +510,7 @@ const Dashboard = () => {
               </Box>
             </CardContent>
           </Card>
-        </Grid>
 
-        <Grid item xs={6} sm={6} md={3}>
           <Card
             sx={(theme) => ({
               height: '100%',
@@ -512,12 +535,17 @@ const Dashboard = () => {
                     sx={{
                       fontWeight: 900,
                       color: '#4CAF50',
-                      fontSize: { xs: '1.15rem', sm: '1.5rem' },
+                      fontSize: { xs: '1.05rem', sm: '1.5rem' },
                       lineHeight: 1.15,
                       mt: 0.5,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      fontVariantNumeric: 'tabular-nums',
                     }}
+                    title={statistics ? formatCurrency(statistics.totalIncome) : '0 ₽'}
                   >
-                    {statistics ? formatCurrency(statistics.totalIncome) : '0 ₽'}
+                    {statistics ? formatCurrencyForTile(statistics.totalIncome) : '0 ₽'}
                   </Typography>
                   <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }} noWrap>
                     {topIncomeCategory ? `Топ: ${topIncomeCategory}` : 'Все поступления'}
@@ -538,9 +566,7 @@ const Dashboard = () => {
               </Box>
             </CardContent>
           </Card>
-        </Grid>
 
-        <Grid item xs={6} sm={6} md={3}>
           <Card
             sx={(theme) => ({
               height: '100%',
@@ -565,12 +591,17 @@ const Dashboard = () => {
                     sx={{
                       fontWeight: 900,
                       color: '#F44336',
-                      fontSize: { xs: '1.15rem', sm: '1.5rem' },
+                      fontSize: { xs: '1.05rem', sm: '1.5rem' },
                       lineHeight: 1.15,
                       mt: 0.5,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                      fontVariantNumeric: 'tabular-nums',
                     }}
+                    title={statistics ? formatCurrency(statistics.totalExpense) : '0 ₽'}
                   >
-                    {statistics ? formatCurrency(statistics.totalExpense) : '0 ₽'}
+                    {statistics ? formatCurrencyForTile(statistics.totalExpense) : '0 ₽'}
                   </Typography>
                   <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }} noWrap>
                     {topExpenseCategory ? `Топ: ${topExpenseCategory}` : 'Все траты'}
@@ -591,9 +622,7 @@ const Dashboard = () => {
               </Box>
             </CardContent>
           </Card>
-        </Grid>
 
-        <Grid item xs={6} sm={6} md={3}>
           <Card
             sx={(theme) => ({
               height: '100%',
@@ -628,15 +657,13 @@ const Dashboard = () => {
                     sx={{
                       fontWeight: 900,
                       color: '#9C27B0',
-                      fontSize: { xs: '1.15rem', sm: '1.5rem' },
+                      fontSize: { xs: '1.05rem', sm: '1.5rem' },
                       lineHeight: 1.15,
                       mt: 0.5,
+                      fontVariantNumeric: 'tabular-nums',
                     }}
                   >
                     {statistics?.expenseByCategory ? Object.keys(statistics.expenseByCategory).length : 0}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.5 }} noWrap>
-                    {topExpenseCategory ? `Топ: ${topExpenseCategory}` : 'Категории с тратами'}
                   </Typography>
                 </Box>
                 <Box
@@ -654,8 +681,7 @@ const Dashboard = () => {
               </Box>
             </CardContent>
           </Card>
-        </Grid>
-      </Grid>
+      </Box>
 
       <Grid container spacing={3}>
         {/* Левая колонка: Новая транзакция */}
