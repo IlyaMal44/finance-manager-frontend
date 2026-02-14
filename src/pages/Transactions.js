@@ -35,6 +35,7 @@ import {
   ArrowBack,
   Edit,
   Delete,
+  Download,
 } from '@mui/icons-material';
 
 const Transactions = () => {
@@ -176,6 +177,61 @@ const Transactions = () => {
     }
   };
 
+  const exportTransactions = () => {
+    try {
+      const csvRows = [];
+      
+      // Заголовок
+      csvRows.push('История транзакций');
+      csvRows.push(`Дата экспорта: ${new Date().toLocaleString('ru-RU')}`);
+      csvRows.push('');
+      
+      // Статистика по отфильтрованным транзакциям
+      const totalIncome = getTotalAmount('INCOME');
+      const totalExpense = getTotalAmount('EXPENSE');
+      csvRows.push('Статистика');
+      csvRows.push(`Всего транзакций,${filteredTransactions.length}`);
+      csvRows.push(`Общие доходы,${totalIncome.toFixed(2)} ₽`);
+      csvRows.push(`Общие расходы,${totalExpense.toFixed(2)} ₽`);
+      csvRows.push(`Баланс,${(totalIncome - totalExpense).toFixed(2)} ₽`);
+      csvRows.push('');
+      
+      // Транзакции
+      csvRows.push('Транзакции');
+      csvRows.push('Дата,Тип,Категория,Сумма,Описание');
+      
+      filteredTransactions.forEach((transaction) => {
+        const date = transaction.date || transaction.createdAt || '';
+        const formattedDate = date ? new Date(date).toLocaleString('ru-RU') : '';
+        const type = transaction.type === 'INCOME' ? 'Доход' : 'Расход';
+        const amount = (transaction.amount || 0).toFixed(2);
+        const category = transaction.category || '';
+        const description = (transaction.description || '').replace(/,/g, ';'); // Заменяем запятые в описании
+        
+        csvRows.push(`${formattedDate},${type},${category},${amount} ₽,"${description}"`);
+      });
+      
+      // Создаем и скачиваем файл
+      const csvContent = csvRows.join('\n');
+      const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' }); // BOM для корректного отображения кириллицы в Excel
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      
+      link.setAttribute('href', url);
+      link.setAttribute('download', `Транзакции_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Показываем уведомление об успехе
+      alert('Данные успешно экспортированы!');
+    } catch (error) {
+      console.error('Ошибка экспорта данных:', error);
+      setError('Ошибка при экспорте данных');
+    }
+  };
+
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('ru-RU', {
       style: 'currency',
@@ -272,6 +328,15 @@ const Transactions = () => {
           </Typography>
         </Box>
         <Box sx={{ display: 'flex', gap: 2 }}>
+          <Tooltip title="Экспортировать транзакции">
+            <IconButton 
+              onClick={exportTransactions} 
+              disabled={loading || transactions.length === 0}
+              sx={{ bgcolor: 'success.light', color: 'white', '&:hover': { bgcolor: 'success.main' } }}
+            >
+              <Download />
+            </IconButton>
+          </Tooltip>
           <Tooltip title="Обновить">
             <IconButton onClick={fetchTransactions} disabled={loading}>
               <Refresh />
