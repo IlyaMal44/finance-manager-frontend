@@ -30,6 +30,8 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  Collapse,
+  Popover,
 } from '@mui/material';
 import {
   Add,
@@ -41,6 +43,7 @@ import {
   Refresh,
   ArrowBack,
   ExpandMore,
+  InfoOutlined,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axiosConfig';
@@ -61,6 +64,8 @@ const Budget = () => {
   const isMobile = useMediaQuery((theme) => theme.breakpoints.down('sm'));
   const [budgetQuery, setBudgetQuery] = useState('');
   const [budgetFilter, setBudgetFilter] = useState('all'); // all | exceeded | near
+  const [budgetInfoOpen, setBudgetInfoOpen] = useState(false);
+  const [budgetInfoAnchorEl, setBudgetInfoAnchorEl] = useState(null);
   const [categories] = useState([
     'Продукты', 'Транспорт', 'Развлечения', 'Одежда',
     'Здоровье', 'Образование', 'Жилье', 'Коммунальные',
@@ -656,12 +661,72 @@ const Budget = () => {
         <Grid item xs={12} md={8}>
           <Card sx={{ borderRadius: 2, boxShadow: 3, height: '100%' }}>
             <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
-                <Category color="primary" sx={{ fontSize: 30, mr: 2 }} />
-                <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                  Мои бюджеты
-                </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, mb: 1.5 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
+                  <Category color="primary" sx={{ fontSize: 30, mr: 2 }} />
+                  <Typography variant="h6" sx={{ fontWeight: 600 }} noWrap>
+                    Мои бюджеты
+                  </Typography>
+                </Box>
+
+                <Tooltip
+                  title={
+                    isMobile
+                      ? (budgetInfoOpen ? 'Скрыть подсказку' : 'Как работают бюджеты')
+                      : 'Как работают бюджеты'
+                  }
+                >
+                  <IconButton
+                    size="small"
+                    onClick={(e) => {
+                      if (isMobile) {
+                        setBudgetInfoOpen((v) => !v);
+                      } else {
+                        setBudgetInfoAnchorEl((prev) => (prev ? null : e.currentTarget));
+                      }
+                    }}
+                    aria-label="Как работают бюджеты"
+                  >
+                    <InfoOutlined fontSize="small" />
+                  </IconButton>
+                </Tooltip>
               </Box>
+
+              {/* Мобилка: подсказка встроенная (не мешает тапам) */}
+              <Collapse in={isMobile && budgetInfoOpen} timeout={200} unmountOnExit>
+                <Alert severity="info" sx={{ mb: 2 }}>
+                  <Typography variant="body2">
+                    <strong>Как работают бюджеты:</strong> Когда вы устанавливаете бюджет для категории, система отслеживает все
+                    расходы в этой категории. При достижении 80% лимита отображается предупреждение, а при превышении лимита — красная индикация.
+                  </Typography>
+                </Alert>
+              </Collapse>
+
+              {/* Десктоп: подсказка во всплывающем Popover, чтобы таблица не "прыгала" вниз */}
+              <Popover
+                open={!isMobile && Boolean(budgetInfoAnchorEl)}
+                anchorEl={budgetInfoAnchorEl}
+                onClose={() => setBudgetInfoAnchorEl(null)}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                slotProps={{
+                  paper: {
+                    sx: {
+                      p: 2,
+                      maxWidth: 420,
+                      borderRadius: 2,
+                    },
+                  },
+                }}
+              >
+                <Typography variant="subtitle2" sx={{ fontWeight: 800, mb: 0.5 }}>
+                  Как работают бюджеты
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Когда вы устанавливаете бюджет для категории, система отслеживает все расходы в этой категории.
+                  При достижении 80% лимита отображается предупреждение, а при превышении лимита — красная индикация.
+                </Typography>
+              </Popover>
 
               {budgets.length === 0 ? (
                 <Box sx={{ py: 4, textAlign: 'center' }}>
@@ -1029,16 +1094,6 @@ const Budget = () => {
           </Button>
         </DialogActions>
       </Dialog>
-
-      {/* Информация о бюджетах */}
-      <Box sx={{ mt: 4 }}>
-        <Alert severity="info">
-          <Typography variant="body2">
-            <strong>Как работают бюджеты:</strong> Когда вы устанавливаете бюджет для категории, система отслеживает все 
-            расходы в этой категории. При достижении 80% лимита отображается предупреждение, а при превышении лимита - красная индикация.
-          </Typography>
-        </Alert>
-      </Box>
     </Container>
   );
 };
