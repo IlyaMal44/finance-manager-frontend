@@ -11,6 +11,8 @@ import {
 } from '@mui/material';
 
 const MIN_PASSWORD_LENGTH = 6;
+const MIN_USERNAME_LENGTH = 2;
+const MAX_USERNAME_LENGTH = 50;
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -25,6 +27,16 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    const usernameLength = (formData.username || '').trim().length;
+    if (usernameLength < MIN_USERNAME_LENGTH) {
+      setError(`Имя пользователя должно быть минимум ${MIN_USERNAME_LENGTH} символов`);
+      return;
+    }
+    if (usernameLength > MAX_USERNAME_LENGTH) {
+      setError(`Имя пользователя должно быть не более ${MAX_USERNAME_LENGTH} символов`);
+      return;
+    }
     
     if ((formData.password || '').length < MIN_PASSWORD_LENGTH) {
       setError(`Пароль должен быть минимум ${MIN_PASSWORD_LENGTH} символов`);
@@ -51,6 +63,9 @@ const Register = () => {
     }
   };
 
+  const usernameLength = (formData.username || '').trim().length;
+  const usernameTooShort = usernameLength > 0 && usernameLength < MIN_USERNAME_LENGTH;
+  const usernameTooLong = usernameLength > MAX_USERNAME_LENGTH;
   const passwordTooShort =
     (formData.password || '').length > 0 && (formData.password || '').length < MIN_PASSWORD_LENGTH;
   const confirmPasswordMismatch =
@@ -89,6 +104,18 @@ const Register = () => {
               setError('');
               setFormData({ ...formData, username: e.target.value });
             }}
+            inputProps={{ 
+              minLength: MIN_USERNAME_LENGTH, 
+              maxLength: MAX_USERNAME_LENGTH 
+            }}
+            error={usernameTooShort || usernameTooLong}
+            helperText={
+              usernameTooShort 
+                ? `Минимум ${MIN_USERNAME_LENGTH} символа` 
+                : usernameTooLong 
+                  ? `Максимум ${MAX_USERNAME_LENGTH} символов`
+                  : `От ${MIN_USERNAME_LENGTH} до ${MAX_USERNAME_LENGTH} символов`
+            }
             required
             disabled={success}
           />

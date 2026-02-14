@@ -11,6 +11,8 @@ import {
 } from '@mui/material';
 
 const MIN_PASSWORD_LENGTH = 6;
+const MIN_USERNAME_LENGTH = 2;
+const MAX_USERNAME_LENGTH = 50;
 
 const Login = () => {
   const [formData, setFormData] = useState({
