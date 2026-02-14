@@ -92,7 +92,7 @@ const Login = () => {
     <Container maxWidth="sm">
       <Box sx={{ mt: 8, p: 4, boxShadow: 3, borderRadius: 2 }}>
         <Typography variant="h4" gutterBottom align="center">
-          Вход в Finance Manager
+          Вход в «Мои финансы»
         </Typography>
         
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}

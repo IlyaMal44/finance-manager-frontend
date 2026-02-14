@@ -75,10 +75,10 @@ const Header = ({ mode, toggleMode }) => {
 
         <Typography variant="h6" sx={{ flexGrow: 1 }} noWrap>
           <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
-            Finance Manager |{' '}
+            Мои финансы |{' '}
           </Box>
           <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
-            Finance |{' '}
+            Финансы |{' '}
           </Box>
           {user.username}
         </Typography>
