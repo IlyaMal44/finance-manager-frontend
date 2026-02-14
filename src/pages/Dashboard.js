@@ -312,7 +312,7 @@ const Dashboard = () => {
   }
 
   return (
-    <Container maxWidth="xl" sx={{ py: 3 }}>
+    <Container maxWidth="xl" sx={{ py: { xs: 2, sm: 3 }, px: { xs: 1.5, sm: 3 } }}>
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
@@ -325,45 +325,87 @@ const Dashboard = () => {
       </Snackbar>
 
       {/* Заголовок с информацией о пользователе - БЕЗ ID кошелька */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-        <Box>
-          <Typography variant="h4" gutterBottom sx={{ fontWeight: 600, color: 'primary.main' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: { xs: 'flex-start', sm: 'center' },
+          flexWrap: 'wrap',
+          gap: { xs: 1.5, sm: 2 },
+          mb: { xs: 2.5, sm: 4 },
+        }}
+      >
+        <Box sx={{ width: { xs: '100%', sm: 'auto' } }}>
+          <Typography
+            variant="h4"
+            gutterBottom
+            sx={{
+              fontWeight: 700,
+              color: 'primary.main',
+              fontSize: { xs: '1.6rem', sm: undefined },
+              lineHeight: 1.15,
+              mb: { xs: 0.5, sm: 0.5 },
+            }}
+          >
             Добро пожаловать, {user.username}!
           </Typography>
-          <Typography variant="subtitle1" color="text.secondary">
+          <Typography variant="subtitle1" color="text.secondary" sx={{ maxWidth: 560 }}>
             Управляйте вашими финансами эффективно
           </Typography>
         </Box>
-        <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-          {checkBudgetExceeded() && (
-            <Chip
-              icon={<Warning />}
-              label="Превышен бюджет"
-              color="error"
-              variant="outlined"
-            />
-          )}
-          <Tooltip title="Экспортировать данные">
-            <IconButton 
-              onClick={exportData} 
-              disabled={loading} 
-              sx={{ bgcolor: 'success.light', color: 'white', '&:hover': { bgcolor: 'success.main' } }}
-            >
-              <Download />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Обновить данные">
-            <IconButton onClick={fetchStatistics} disabled={loading} sx={{ bgcolor: 'primary.light', color: 'white' }}>
-              <Refresh />
-            </IconButton>
-          </Tooltip>
+        {/* На мобилке отделяем действия в отдельную "панель" — так визуально чище */}
+        <Box
+          sx={{
+            width: '100%',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: 1,
+            mt: { xs: 0.5, sm: 0 },
+            px: { xs: 1, sm: 0 },
+            py: { xs: 0.75, sm: 0 },
+            borderRadius: { xs: 2, sm: 0 },
+            bgcolor: { xs: 'action.hover', sm: 'transparent' },
+            border: { xs: '1px solid', sm: 'none' },
+            borderColor: { xs: 'divider', sm: 'transparent' },
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
+            {checkBudgetExceeded() && (
+              <Chip
+                icon={<Warning />}
+                label="Превышен бюджет"
+                color="error"
+                variant="outlined"
+                size="small"
+              />
+            )}
+          </Box>
+          <Box sx={{ display: 'flex', gap: 0.75, alignItems: 'center' }}>
+            <Tooltip title="Экспортировать данные">
+              <IconButton 
+                onClick={exportData} 
+                disabled={loading} 
+                size="small"
+                sx={{ p: 0.75, bgcolor: 'success.light', color: 'white', '&:hover': { bgcolor: 'success.main' } }}
+              >
+                <Download fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Обновить данные">
+              <IconButton onClick={fetchStatistics} disabled={loading} size="small" sx={{ p: 0.75, bgcolor: 'primary.light', color: 'white' }}>
+                <Refresh fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          </Box>
         </Box>
       </Box>
 
       {loading && <LinearProgress sx={{ mb: 3 }} />}
 
-      <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} md={3}>
+      <Grid container spacing={{ xs: 1.5, sm: 3 }} sx={{ mb: { xs: 3, sm: 4 } }}>
+        <Grid item xs={6} sm={6} md={3}>
           <Card sx={{ 
             height: '100%', 
             bgcolor: 'primary.main',
@@ -371,14 +413,14 @@ const Dashboard = () => {
             borderRadius: 2,
             boxShadow: 3,
           }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <AccountBalanceWallet sx={{ fontSize: 40, mr: 2 }} />
+            <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: { xs: 1, sm: 2 } }}>
+                <AccountBalanceWallet sx={{ fontSize: { xs: 32, sm: 40 }, mr: { xs: 1.25, sm: 2 } }} />
                 <Box>
                   <Typography variant="subtitle2" sx={{ opacity: 0.9 }}>
                     Общий баланс
                   </Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 700, fontSize: '1.8rem' }}>
+                  <Typography variant="h6" sx={{ fontWeight: 800, fontSize: { xs: '1.15rem', sm: '1.8rem' }, lineHeight: 1.2 }}>
                     {statistics ? formatCurrency(statistics.balance) : '0 ₽'}
                   </Typography>
                 </Box>
@@ -387,26 +429,26 @@ const Dashboard = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} md={3}>
+        <Grid item xs={6} sm={6} md={3}>
           <Card sx={{ 
             height: '100%',
             borderLeft: '4px solid #4CAF50',
             borderRadius: 2,
             boxShadow: 2,
           }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <ArrowUpward sx={{ fontSize: 30, color: '#4CAF50', mr: 2 }} />
+            <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: { xs: 1, sm: 2 } }}>
+                <ArrowUpward sx={{ fontSize: { xs: 26, sm: 30 }, color: '#4CAF50', mr: { xs: 1.25, sm: 2 } }} />
                 <Box>
                   <Typography variant="subtitle2" color="text.secondary">
                     Общие доходы
                   </Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 600, color: '#4CAF50', fontSize: '1.5rem' }}>
+                  <Typography variant="h6" sx={{ fontWeight: 800, color: '#4CAF50', fontSize: { xs: '1.1rem', sm: '1.5rem' }, lineHeight: 1.2 }}>
                     {statistics ? formatCurrency(statistics.totalIncome) : '0 ₽'}
                   </Typography>
                 </Box>
               </Box>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
                 <AttachMoney sx={{ fontSize: 16, verticalAlign: 'middle', mr: 0.5 }} />
                 Все поступления
               </Typography>
@@ -414,26 +456,26 @@ const Dashboard = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} md={3}>
+        <Grid item xs={6} sm={6} md={3}>
           <Card sx={{ 
             height: '100%',
             borderLeft: '4px solid #F44336',
             borderRadius: 2,
             boxShadow: 2,
           }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <ArrowDownward sx={{ fontSize: 30, color: '#F44336', mr: 2 }} />
+            <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: { xs: 1, sm: 2 } }}>
+                <ArrowDownward sx={{ fontSize: { xs: 26, sm: 30 }, color: '#F44336', mr: { xs: 1.25, sm: 2 } }} />
                 <Box>
                   <Typography variant="subtitle2" color="text.secondary">
                     Общие расходы
                   </Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 600, color: '#F44336', fontSize: '1.5rem' }}>
+                  <Typography variant="h6" sx={{ fontWeight: 800, color: '#F44336', fontSize: { xs: '1.1rem', sm: '1.5rem' }, lineHeight: 1.2 }}>
                     {statistics ? formatCurrency(statistics.totalExpense) : '0 ₽'}
                   </Typography>
                 </Box>
               </Box>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
                 <MoneyOff sx={{ fontSize: 16, verticalAlign: 'middle', mr: 0.5 }} />
                 Все траты
               </Typography>
@@ -441,26 +483,36 @@ const Dashboard = () => {
           </Card>
         </Grid>
 
-        <Grid item xs={12} md={3}>
+        <Grid item xs={6} sm={6} md={3}>
           <Card sx={{ 
             height: '100%',
             borderLeft: '4px solid #9C27B0',
             borderRadius: 2,
             boxShadow: 2,
           }}>
-            <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                <Category sx={{ fontSize: 30, color: '#9C27B0', mr: 2 }} />
-                <Box>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Активные категории
+            <CardContent sx={{ p: { xs: 2, sm: 2.5 } }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: { xs: 1, sm: 2 } }}>
+                <Category sx={{ fontSize: { xs: 30, sm: 30 }, color: '#9C27B0', mr: { xs: 1.1, sm: 2 } }} />
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography
+                    variant="subtitle2"
+                    color="text.secondary"
+                    noWrap
+                    sx={{ fontSize: { xs: '1.05rem', sm: undefined }, lineHeight: 1.1 }}
+                  >
+                    <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+                      Активные категории
+                    </Box>
+                    <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
+                      Категории
+                    </Box>
                   </Typography>
-                  <Typography variant="h5" sx={{ fontWeight: 600, color: '#9C27B0', fontSize: '1.5rem' }}>
+                  <Typography variant="h6" sx={{ fontWeight: 800, color: '#9C27B0', fontSize: { xs: '1.1rem', sm: '1.5rem' }, lineHeight: 1.2 }}>
                     {statistics?.expenseByCategory ? Object.keys(statistics.expenseByCategory).length : 0}
                   </Typography>
                 </Box>
               </Box>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body2" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
                 Категории с тратами
               </Typography>
             </CardContent>
@@ -587,7 +639,7 @@ const Dashboard = () => {
                               </Typography>
                               <Typography
                                 component="span"
-                                sx={{ fontSize: 16, fontWeight: 500, color: '#1a1a1a' }}
+                                sx={{ fontSize: 16, fontWeight: 500, color: 'text.primary' }}
                               >
                                 {option}
                               </Typography>
