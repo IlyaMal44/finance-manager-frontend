@@ -59,7 +59,56 @@ const Register = () => {
       setSuccess(true);
       setTimeout(() => navigate('/login'), 2000);
     } catch (err) {
-      setError(err.response?.data?.message || 'Ошибка регистрации');
+      const errorResponse = err.response?.data;
+      const status = err.response?.status;
+      
+      // Обработка различных типов ошибок
+      let errorMessage = 'Ошибка регистрации';
+      
+      // Статус 409 - конфликт (почта уже существует)
+      if (status === 409) {
+        const responseMessage = errorResponse?.message || errorResponse?.error || '';
+        
+        // Проверяем различные варианты сообщений от бэкенда
+        if (responseMessage.toLowerCase().includes('mail') || 
+            responseMessage.toLowerCase().includes('почт') ||
+            responseMessage.toLowerCase().includes('email') ||
+            responseMessage.toLowerCase().includes('exists') ||
+            responseMessage.toLowerCase().includes('уже') ||
+            responseMessage.toLowerCase().includes('зарегистрирован')) {
+          errorMessage = 'Такая почта уже зарегистрирована. Используйте другую почту или войдите в систему.';
+        } else {
+          // Если сообщение не содержит ключевых слов, но статус 409 - скорее всего конфликт с почтой
+          errorMessage = 'Такая почта уже зарегистрирована. Используйте другую почту или войдите в систему.';
+        }
+      } else if (status === 400) {
+        // Ошибка валидации
+        errorMessage = errorResponse?.message || 
+                      errorResponse?.error || 
+                      'Проверьте правильность введенных данных';
+      } else if (status === 500) {
+        // Серверная ошибка - проверяем сообщение
+        const serverMessage = errorResponse?.message || errorResponse?.error || '';
+        if (serverMessage.toLowerCase().includes('mail') || 
+            serverMessage.toLowerCase().includes('почт') ||
+            serverMessage.toLowerCase().includes('email') ||
+            serverMessage.toLowerCase().includes('exists')) {
+          errorMessage = 'Такая почта уже зарегистрирована. Используйте другую почту или войдите в систему.';
+        } else {
+          errorMessage = serverMessage || 'Внутренняя ошибка сервера. Попробуйте позже.';
+        }
+      } else if (errorResponse?.message) {
+        errorMessage = errorResponse.message;
+      } else if (errorResponse?.error) {
+        // Если пришло просто "Conflict" или другое техническое сообщение
+        if (errorResponse.error === 'Conflict' || errorResponse.error === 'CONFLICT') {
+          errorMessage = 'Такая почта уже зарегистрирована. Используйте другую почту или войдите в систему.';
+        } else {
+          errorMessage = errorResponse.error;
+        }
+      }
+      
+      setError(errorMessage);
     }
   };
 
