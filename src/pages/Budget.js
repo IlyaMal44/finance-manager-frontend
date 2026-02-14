@@ -447,10 +447,14 @@ const Budget = () => {
         {/* Левая колонка: Обзор и быстрые действия */}
         <Grid
           item
-          xs={isDesktopLayout ? 4 : 12}
-          sm={isDesktopLayout ? 4 : 12}
-          md={4}
-          sx={{ width: { xs: '100%', sm: 'auto' } }}
+          xs={12}
+          sm={12}
+          md={isDesktopLayout ? 5 : 12}
+          sx={{
+            width: { xs: '100%', sm: 'auto' },
+            flexShrink: isDesktopLayout ? 0 : undefined,
+            minWidth: isDesktopLayout ? 420 : undefined,
+          }}
         >
           <Card sx={{ borderRadius: 2, boxShadow: 3, mb: 3 }}>
             <CardContent>
@@ -481,7 +485,7 @@ const Budget = () => {
                   >
                     <Savings color="primary" />
                   </Box>
-                  <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.1 }} noWrap>
+                  <Typography variant="h6" sx={{ fontWeight: 800, lineHeight: 1.1 }}>
                     Обзор бюджетов
                   </Typography>
                 </Box>
@@ -500,14 +504,16 @@ const Budget = () => {
                   borderColor: 'divider',
                   bgcolor: 'action.hover',
                   mb: 2,
+                  overflow: 'hidden',
                 }}
               >
                 <Box
                   sx={{
                     display: 'flex',
+                    flexDirection: { xs: 'row', sm: 'column' },
                     flexWrap: { xs: 'wrap', sm: 'nowrap' },
-                    alignItems: 'center',
-                    gap: 1,
+                    alignItems: { xs: 'center', sm: 'flex-start' },
+                    gap: { xs: 1, sm: 0.75 },
                   }}
                 >
                   <Chip
@@ -735,10 +741,13 @@ const Budget = () => {
         {/* Правая колонка: Список бюджетов */}
         <Grid
           item
-          xs={isDesktopLayout ? 8 : 12}
-          sm={isDesktopLayout ? 8 : 12}
-          md={8}
-          sx={{ width: { xs: '100%', sm: 'auto' } }}
+          xs={12}
+          sm={12}
+          md={isDesktopLayout ? 7 : 12}
+          sx={{
+            width: { xs: '100%', sm: 'auto' },
+            minWidth: 0,
+          }}
         >
           <Card sx={{ borderRadius: 2, boxShadow: 3 }}>
             <CardContent>
@@ -1105,7 +1114,7 @@ const Budget = () => {
                   )}
                 </Box>
               ) : (
-                <TableContainer component={Paper} variant="outlined">
+                <TableContainer component={Paper} variant="outlined" sx={{ overflowX: 'auto' }}>
                   <Table>
                     <TableHead>
                       <TableRow>
