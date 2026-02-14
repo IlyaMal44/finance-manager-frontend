@@ -753,7 +753,7 @@ const Budget = () => {
                                     {budget.category}
                                   </Typography>
                                   <Typography variant="caption" color="text.secondary">
-                                    Осталось: {formatCurrency(budget.remaining)} • {budget.usagePercentage.toFixed(0)}%
+                                    Осталось: {formatCurrency(budget.remaining)} • Использовано: {budget.usagePercentage.toFixed(0)}%
                                   </Typography>
                                 </Box>
                                 <Chip
@@ -954,7 +954,14 @@ const Budget = () => {
         <DialogTitle>
           {editingBudget ? 'Редактировать бюджет' : 'Новый бюджет'}
         </DialogTitle>
-        <DialogContent>
+        <DialogContent
+          sx={{
+            // В fullScreen-диалоге DialogContent по умолчанию растягивается (flex: 1),
+            // из-за чего кнопки уезжают вниз и появляется "пустота".
+            flex: 'unset',
+            pb: { xs: 2, sm: 3 },
+          }}
+        >
           <Box sx={{ pt: 2 }}>
             <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
               Категория
@@ -1011,7 +1018,7 @@ const Budget = () => {
             )}
           </Box>
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ px: { xs: 2, sm: 2 }, py: { xs: 1.25, sm: 1 } }}>
           <Button onClick={() => setOpenDialog(false)}>Отмена</Button>
           <Button 
             onClick={handleSetBudget} 
