@@ -12,7 +12,7 @@ import {
   Divider,
   useMediaQuery,
 } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { DarkMode, HelpOutline, LightMode } from '@mui/icons-material';
 import MenuIcon from '@mui/icons-material/Menu';
 
@@ -26,10 +26,19 @@ const NAV_ITEMS = [
 
 const Header = ({ mode, toggleMode }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const user = JSON.parse(localStorage.getItem('user'));
   const isMobile = useMediaQuery((theme) => theme.breakpoints.down('sm'));
   const [menuAnchorEl, setMenuAnchorEl] = useState(null);
   const [helpOpen, setHelpOpen] = useState(false);
+  
+  // Определяем активный раздел
+  const isActive = (path) => {
+    if (path === '/dashboard') {
+      return location.pathname === '/' || location.pathname === '/dashboard';
+    }
+    return location.pathname === path;
+  };
 
   const isMenuOpen = Boolean(menuAnchorEl);
   const handleOpenMenu = (event) => setMenuAnchorEl(event.currentTarget);
@@ -92,13 +101,46 @@ const Header = ({ mode, toggleMode }) => {
 
           {!isMobile && (
             <>
-              <Button color="inherit" onClick={() => navigate('/budgets')}>
+              <Button 
+                color="inherit" 
+                onClick={() => navigate('/budgets')}
+                sx={{
+                  backgroundColor: isActive('/budgets') ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                  '&:hover': {
+                    backgroundColor: isActive('/budgets') ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.1)',
+                  },
+                  fontWeight: isActive('/budgets') ? 600 : 400,
+                  borderBottom: isActive('/budgets') ? '2px solid white' : '2px solid transparent',
+                }}
+              >
                 Бюджеты
               </Button>
-              <Button color="inherit" onClick={() => navigate('/dashboard')}>
+              <Button 
+                color="inherit" 
+                onClick={() => navigate('/dashboard')}
+                sx={{
+                  backgroundColor: isActive('/dashboard') ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                  '&:hover': {
+                    backgroundColor: isActive('/dashboard') ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.1)',
+                  },
+                  fontWeight: isActive('/dashboard') ? 600 : 400,
+                  borderBottom: isActive('/dashboard') ? '2px solid white' : '2px solid transparent',
+                }}
+              >
                 Дашборд
               </Button>
-              <Button color="inherit" onClick={() => navigate('/transactions')}>
+              <Button 
+                color="inherit" 
+                onClick={() => navigate('/transactions')}
+                sx={{
+                  backgroundColor: isActive('/transactions') ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                  '&:hover': {
+                    backgroundColor: isActive('/transactions') ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.1)',
+                  },
+                  fontWeight: isActive('/transactions') ? 600 : 400,
+                  borderBottom: isActive('/transactions') ? '2px solid white' : '2px solid transparent',
+                }}
+              >
                 Транзакции
               </Button>
               <Tooltip title="Как пользоваться приложением">
@@ -125,11 +167,28 @@ const Header = ({ mode, toggleMode }) => {
             onClose={handleCloseMenu}
             keepMounted
           >
-            {NAV_ITEMS.map((item) => (
-              <MenuItem key={item.to} onClick={() => handleNavigate(item.to)}>
-                {item.label}
-              </MenuItem>
-            ))}
+            {NAV_ITEMS.map((item) => {
+              const active = isActive(item.to);
+              return (
+                <MenuItem 
+                  key={item.to} 
+                  onClick={() => handleNavigate(item.to)}
+                  selected={active}
+                  sx={{
+                    backgroundColor: active ? 'rgba(25, 118, 210, 0.1)' : 'transparent',
+                    fontWeight: active ? 600 : 400,
+                    '&.Mui-selected': {
+                      backgroundColor: 'rgba(25, 118, 210, 0.15)',
+                      '&:hover': {
+                        backgroundColor: 'rgba(25, 118, 210, 0.2)',
+                      },
+                    },
+                  }}
+                >
+                  {item.label}
+                </MenuItem>
+              );
+            })}
             <Divider />
             <MenuItem onClick={handleOpenHelp}>Помощь</MenuItem>
             <MenuItem onClick={handleLogout}>Выйти</MenuItem>
