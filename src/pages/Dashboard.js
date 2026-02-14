@@ -288,6 +288,41 @@ const Dashboard = () => {
     }).format(amount || 0);
   };
 
+  // Форматирование суммы в инпуте: "200000" -> "200 000", поддержка "." / "," для копеек.
+  const sanitizeAmountInput = (input) => {
+    const s = String(input ?? '')
+      .replace(/\s+/g, '')
+      .replace(/,/g, '.');
+
+    let out = '';
+    let dotUsed = false;
+    for (const ch of s) {
+      if (ch >= '0' && ch <= '9') out += ch;
+      else if (ch === '.' && !dotUsed) {
+        out += '.';
+        dotUsed = true;
+      }
+    }
+
+    if (out.includes('.')) {
+      const [i, d = ''] = out.split('.');
+      // максимум 2 знака после точки
+      return `${i}.${d.slice(0, 2)}`;
+    }
+    return out;
+  };
+
+  const formatAmountForInput = (raw) => {
+    if (!raw) return '';
+    const cleaned = sanitizeAmountInput(raw);
+    const endsWithDot = String(raw).trim().endsWith('.') || cleaned.endsWith('.');
+    const [intPart = '', decPart] = cleaned.split('.');
+    const spacedInt = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    if (endsWithDot) return `${spacedInt}.`;
+    if (typeof decPart === 'string' && decPart.length > 0) return `${spacedInt}.${decPart}`;
+    return spacedInt;
+  };
+
   const formatCurrencyForTile = (amount) => {
     const value = typeof amount === 'number' ? amount : Number(amount);
     if (!Number.isFinite(value)) return '0 ₽';
@@ -732,12 +767,16 @@ const Dashboard = () => {
                     <TextField
                       fullWidth
                       label=""
-                      type="number"
-                      value={transaction.amount}
-                      onChange={(e) => setTransaction({...transaction, amount: e.target.value})}
+                      type="text"
+                      inputMode="decimal"
+                      placeholder=""
+                      value={formatAmountForInput(transaction.amount)}
+                      onChange={(e) => {
+                        const next = sanitizeAmountInput(e.target.value);
+                        setTransaction({ ...transaction, amount: next });
+                      }}
                       size="small"
                       required
-                      inputProps={{ min: "0.01", step: "0.01" }}
                       InputProps={{
                         startAdornment: <Typography sx={{ mr: 1 }}>₽</Typography>,
                       }}
