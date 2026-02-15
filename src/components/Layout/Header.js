@@ -23,6 +23,7 @@ const NAV_ITEMS = [
   { label: 'Бюджеты', to: '/budgets' },
   { label: 'Главная', to: '/dashboard' },
   { label: 'Транзакции', to: '/transactions' },
+  { label: 'Экспорт', to: '/export' },
 ];
 
 const Header = ({ mode, toggleMode }) => {
@@ -149,6 +150,20 @@ const Header = ({ mode, toggleMode }) => {
                 }}
               >
                 Транзакции
+              </Button>
+              <Button 
+                color="inherit" 
+                onClick={() => navigate('/export')}
+                sx={{
+                  backgroundColor: isActive('/export') ? 'rgba(255, 255, 255, 0.2)' : 'transparent',
+                  '&:hover': {
+                    backgroundColor: isActive('/export') ? 'rgba(255, 255, 255, 0.25)' : 'rgba(255, 255, 255, 0.1)',
+                  },
+                  fontWeight: isActive('/export') ? 600 : 400,
+                  borderBottom: isActive('/export') ? '2px solid white' : '2px solid transparent',
+                }}
+              >
+                Экспорт
               </Button>
               <Tooltip title="Как пользоваться приложением">
                 <Button

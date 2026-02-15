@@ -32,7 +32,6 @@ import {
   ArrowDownward,
   Warning,
   Settings,
-  Download,
 } from '@mui/icons-material';
 
 const Dashboard = () => {
@@ -197,87 +196,6 @@ const Dashboard = () => {
     setSnackbar({ ...snackbar, open: false });
   };
 
-  const exportData = async () => {
-    try {
-      setLoading(true);
-      
-      // Получаем транзакции
-      const transactionsResponse = await api.get(`/finance/${walletId}/transactions`);
-      const transactionsData = transactionsResponse.data || [];
-      
-      // Формируем CSV
-      const csvRows = [];
-      
-      // Заголовок с общей информацией
-      csvRows.push('Финансовый отчет');
-      csvRows.push(`Пользователь: ${user.username}`);
-      csvRows.push(`Дата экспорта: ${new Date().toLocaleString('ru-RU')}`);
-      csvRows.push('');
-      
-      // Статистика
-      if (statistics) {
-        csvRows.push('Общая статистика');
-        csvRows.push(`Общий баланс,${statistics.balance?.toFixed(2) || 0} ₽`);
-        csvRows.push(`Общие доходы,${statistics.totalIncome?.toFixed(2) || 0} ₽`);
-        csvRows.push(`Общие расходы,${statistics.totalExpense?.toFixed(2) || 0} ₽`);
-        csvRows.push('');
-      }
-      
-      // Бюджеты
-      if (statistics?.budgetStatus && Object.keys(statistics.budgetStatus).length > 0) {
-        csvRows.push('Бюджеты');
-        csvRows.push('Категория,Лимит,Потрачено,Осталось,Использовано (%),Статус');
-        
-        Object.entries(statistics.budgetStatus).forEach(([category, budget]) => {
-          const status = budget.exceeded 
-            ? 'Превышен' 
-            : budget.usagePercentage > 80 
-              ? 'Внимание' 
-              : 'В норме';
-          
-          csvRows.push(
-            `${category},${budget.limitAmount.toFixed(2)} ₽,${budget.currentSpent.toFixed(2)} ₽,${budget.remaining.toFixed(2)} ₽,${budget.usagePercentage.toFixed(1)}%,${status}`
-          );
-        });
-        csvRows.push('');
-      }
-      
-      // Транзакции
-      csvRows.push('Транзакции');
-      csvRows.push(['Дата', 'Тип', 'Категория', 'Сумма', 'Описание'].map((s) => `"${s}"`).join(','));
-      const escapeCsv = (s) => `"${String(s).replace(/"/g, '""')}"`;
-      transactionsData.forEach((transaction) => {
-        const date = transaction.date || transaction.createdAt || '';
-        const formattedDate = date ? new Date(date).toLocaleString('ru-RU') : '';
-        const type = transaction.type === 'INCOME' ? 'Доход' : 'Расход';
-        const amount = (transaction.amount || 0).toFixed(2);
-        const category = transaction.category || '';
-        const description = (transaction.description || '').replace(/"/g, '""');
-        csvRows.push([formattedDate, type, category, `${amount} ₽`, description].map(escapeCsv).join(','));
-      });
-      
-      // Создаем и скачиваем файл
-      const csvContent = csvRows.join('\n');
-      const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' }); // BOM для корректного отображения кириллицы в Excel
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      
-      link.setAttribute('href', url);
-      link.setAttribute('download', `Мои_финансы_${new Date().toISOString().split('T')[0]}.csv`);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      showSnackbar('Данные успешно экспортированы!', 'success');
-    } catch (error) {
-      console.error('Ошибка экспорта данных:', error);
-      showSnackbar('Ошибка при экспорте данных', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('ru-RU', {
       style: 'currency',
@@ -429,37 +347,20 @@ const Dashboard = () => {
             borderTop: 1,
             borderColor: 'divider',
             display: 'flex',
-            justifyContent: 'space-between',
             alignItems: 'center',
-            gap: 1,
-            flexWrap: 'wrap',
+            minWidth: 0,
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
-            {checkBudgetExceeded() && (
-              <Chip
-                icon={<Warning />}
-                label="Превышен бюджет"
-                color="error"
-                variant="outlined"
-                size="small"
-                sx={{ fontWeight: 600 }}
-              />
-            )}
-          </Box>
-
-          <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <Button
-              variant="contained"
+          {checkBudgetExceeded() && (
+            <Chip
+              icon={<Warning />}
+              label="Превышен бюджет"
+              color="error"
+              variant="outlined"
               size="small"
-              onClick={exportData}
-              disabled={loading}
-              startIcon={<Download />}
-              sx={{ bgcolor: 'success.main', color: 'white', '&:hover': { bgcolor: 'success.dark' } }}
-            >
-              Экспорт данных
-            </Button>
-          </Box>
+              sx={{ fontWeight: 600 }}
+            />
+          )}
         </Box>
       </Paper>
 

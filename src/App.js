@@ -11,6 +11,7 @@ import ResetPassword from './pages/ResetPassword';
 import Dashboard from './pages/Dashboard';
 import Transactions from './pages/Transactions';
 import Budget from './pages/Budget';
+import Export from './pages/Export';
 
 // Компоненты
 import Header from './components/Layout/Header';
@@ -85,6 +86,14 @@ function App() {
             element={
               <PrivateRoute>
                 <Budget />
+              </PrivateRoute>
+            }
+          />
+          <Route
+            path="/export"
+            element={
+              <PrivateRoute>
+                <Export />
               </PrivateRoute>
             }
           />
