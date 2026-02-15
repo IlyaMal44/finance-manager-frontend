@@ -378,6 +378,9 @@ const Transactions = () => {
                 >
                   {filteredTransactions.length} {filteredTransactions.length === 1 ? 'транзакция' : filteredTransactions.length < 5 ? 'транзакции' : 'транзакций'}
                 </Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25 }}>
+                  Доходы: {formatCurrency(getTotalAmount('INCOME'))} • Расходы: {formatCurrency(getTotalAmount('EXPENSE'))}
+                </Typography>
               </Box>
             </Box>
           </CardContent>
@@ -412,7 +415,7 @@ const Transactions = () => {
               </Typography>
             </Box>
             <Grid container spacing={{ xs: 1.5, sm: 2 }} alignItems="flex-end">
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid item xs={6} sm={6} md={3}>
                 <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.25, fontSize: { xs: '0.75rem', sm: 'inherit' } }}>
                   Тип
                 </Typography>
@@ -445,7 +448,7 @@ const Transactions = () => {
                   <MenuItem value="EXPENSE">Расходы</MenuItem>
                 </TextField>
               </Grid>
-              <Grid item xs={12} sm={6} md={3}>
+              <Grid item xs={6} sm={6} md={3}>
                 <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.25, fontSize: { xs: '0.75rem', sm: 'inherit' } }}>
                   Категория
                 </Typography>
@@ -478,7 +481,7 @@ const Transactions = () => {
                   ))}
                 </TextField>
               </Grid>
-              <Grid item xs={12} sm={6} md={2}>
+              <Grid item xs={4} sm={6} md={2}>
                 <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.25, fontSize: { xs: '0.75rem', sm: 'inherit' } }}>
                   Дата с
                 </Typography>
@@ -540,7 +543,7 @@ const Transactions = () => {
                   />
                 )}
               </Grid>
-              <Grid item xs={12} sm={6} md={2}>
+              <Grid item xs={4} sm={6} md={2}>
                 <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.25, fontSize: { xs: '0.75rem', sm: 'inherit' } }}>
                   Дата по
                 </Typography>
@@ -602,7 +605,7 @@ const Transactions = () => {
                   />
                 )}
               </Grid>
-              <Grid item xs={12} sm={12} md={2}>
+              <Grid item xs={4} sm={12} md={2}>
                 <Button
                   variant="outlined"
                   onClick={() => {
