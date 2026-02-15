@@ -21,7 +21,7 @@ import FeedbackDialog from '../Feedback/FeedbackDialog';
 
 const NAV_ITEMS = [
   { label: 'Бюджеты', to: '/budgets' },
-  { label: 'На главную', to: '/dashboard' },
+  { label: 'Главная', to: '/dashboard' },
   { label: 'Транзакции', to: '/transactions' },
 ];
 
@@ -134,7 +134,7 @@ const Header = ({ mode, toggleMode }) => {
                   borderBottom: isActive('/dashboard') ? '2px solid white' : '2px solid transparent',
                 }}
               >
-                На главную
+                Главная
               </Button>
               <Button 
                 color="inherit" 

@@ -874,7 +874,7 @@ const Transactions = () => {
             sx={{ mb: 3, maxWidth: 500, mx: 'auto' }}
           >
             Вы еще не создали ни одной транзакции.
-            Перейдите на главную и добавьте свою первую транзакцию!
+            Перейдите в раздел «Главная» и добавьте свою первую транзакцию!
           </Typography>
           <Button
             variant="contained"
@@ -882,7 +882,7 @@ const Transactions = () => {
             startIcon={<ArrowBack />}
             sx={{ mt: 2 }}
           >
-            Перейти на главную
+            Главная
           </Button>
         </Box>
       ) : (

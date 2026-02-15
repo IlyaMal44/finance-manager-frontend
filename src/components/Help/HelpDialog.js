@@ -15,7 +15,7 @@ import {
 
 const HELP_STEPS = [
   {
-    label: 'На главную (главный экран)',
+    label: 'Главная (главный экран)',
     content: (
       <>
         <Typography variant="body1" sx={{ mb: 1 }}>

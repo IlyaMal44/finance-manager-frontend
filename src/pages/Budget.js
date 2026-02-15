@@ -596,7 +596,7 @@ const Budget = () => {
                       Быстрый шаблон
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Один пресет для быстрой настройки бюджетов по базовым категориям.
+                      Готовый набор для быстрой настройки бюджетов по базовым категориям.
                     </Typography>
                   </Box>
 
@@ -838,7 +838,7 @@ const Budget = () => {
                       Быстрый шаблон
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Один пресет для быстрой настройки бюджетов по базовым категориям.
+                      Готовый набор для быстрой настройки бюджетов по базовым категориям.
                     </Typography>
                   </Box>
                   <Button
