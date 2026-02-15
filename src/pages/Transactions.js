@@ -28,14 +28,12 @@ import {
   Autocomplete,
 } from '@mui/material';
 import {
-  Refresh,
   Visibility,
   ArrowUpward,
   ArrowDownward,
   ArrowBack,
   Edit,
   Delete,
-  Download,
 } from '@mui/icons-material';
 
 const Transactions = () => {
@@ -177,61 +175,6 @@ const Transactions = () => {
     }
   };
 
-  const exportTransactions = () => {
-    try {
-      const csvRows = [];
-      
-      // Заголовок
-      csvRows.push('История транзакций');
-      csvRows.push(`Дата экспорта: ${new Date().toLocaleString('ru-RU')}`);
-      csvRows.push('');
-      
-      // Статистика по отфильтрованным транзакциям
-      const totalIncome = getTotalAmount('INCOME');
-      const totalExpense = getTotalAmount('EXPENSE');
-      csvRows.push('Статистика');
-      csvRows.push(`Всего транзакций,${filteredTransactions.length}`);
-      csvRows.push(`Общие доходы,${totalIncome.toFixed(2)} ₽`);
-      csvRows.push(`Общие расходы,${totalExpense.toFixed(2)} ₽`);
-      csvRows.push(`Баланс,${(totalIncome - totalExpense).toFixed(2)} ₽`);
-      csvRows.push('');
-      
-      // Транзакции
-      csvRows.push('Транзакции');
-      csvRows.push('Дата,Тип,Категория,Сумма,Описание');
-      
-      filteredTransactions.forEach((transaction) => {
-        const date = transaction.date || transaction.createdAt || '';
-        const formattedDate = date ? new Date(date).toLocaleString('ru-RU') : '';
-        const type = transaction.type === 'INCOME' ? 'Доход' : 'Расход';
-        const amount = (transaction.amount || 0).toFixed(2);
-        const category = transaction.category || '';
-        const description = (transaction.description || '').replace(/,/g, ';'); // Заменяем запятые в описании
-        
-        csvRows.push(`${formattedDate},${type},${category},${amount} ₽,"${description}"`);
-      });
-      
-      // Создаем и скачиваем файл
-      const csvContent = csvRows.join('\n');
-      const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' }); // BOM для корректного отображения кириллицы в Excel
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      
-      link.setAttribute('href', url);
-      link.setAttribute('download', `Транзакции_${new Date().toISOString().split('T')[0]}.csv`);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      // Показываем уведомление об успехе
-      alert('Данные успешно экспортированы!');
-    } catch (error) {
-      console.error('Ошибка экспорта данных:', error);
-      setError('Ошибка при экспорте данных');
-    }
-  };
-
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('ru-RU', {
       style: 'currency',
@@ -317,40 +260,37 @@ const Transactions = () => {
         </Alert>
       )}
 
-      {/* Заголовок и управление */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-        <Box>
-          <Typography variant="h4" gutterBottom sx={{ fontWeight: 600, color: 'primary.main' }}>
+      {/* Заголовок в формочке — как на дашборде и в бюджетах */}
+      <Paper
+        variant="outlined"
+        sx={(theme) => ({
+          mb: { xs: 3, sm: 4 },
+          p: { xs: 2, sm: 2.5 },
+          borderRadius: 3,
+          borderColor: 'divider',
+          background:
+            theme.palette.mode === 'dark'
+              ? 'linear-gradient(135deg, rgba(25,118,210,0.22), rgba(0,0,0,0) 55%)'
+              : 'linear-gradient(135deg, rgba(25,118,210,0.10), rgba(255,255,255,0) 55%)',
+        })}
+      >
+        <Box sx={{ minWidth: 0 }}>
+          <Typography
+            variant="h4"
+            sx={{
+              fontWeight: 800,
+              color: 'primary.main',
+              fontSize: { xs: '1.6rem', sm: undefined },
+              lineHeight: 1.15,
+            }}
+          >
             История транзакций
           </Typography>
-          <Typography variant="subtitle1" color="text.secondary">
+          <Typography variant="subtitle1" color="text.secondary" sx={{ mt: 0.5, maxWidth: 560 }}>
             Просмотр и управление всеми финансовыми операциями
           </Typography>
         </Box>
-        <Box sx={{ display: 'flex', gap: 2 }}>
-          <Tooltip title="Экспортировать транзакции">
-            <IconButton 
-              onClick={exportTransactions} 
-              disabled={loading || transactions.length === 0}
-              sx={{ bgcolor: 'success.light', color: 'white', '&:hover': { bgcolor: 'success.main' } }}
-            >
-              <Download />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title="Обновить">
-            <IconButton onClick={fetchTransactions} disabled={loading}>
-              <Refresh />
-            </IconButton>
-          </Tooltip>
-          <Button
-            variant="outlined"
-            startIcon={<ArrowBack />}
-            onClick={() => navigate('/dashboard')}
-          >
-            Назад к дашборду
-          </Button>
-        </Box>
-      </Box>
+      </Paper>
 
       {/* Статистика - показываем только если есть транзакции */}
       {transactions.length > 0 && (
