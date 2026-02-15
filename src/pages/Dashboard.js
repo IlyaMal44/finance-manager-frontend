@@ -245,17 +245,16 @@ const Dashboard = () => {
       
       // Транзакции
       csvRows.push('Транзакции');
-      csvRows.push('Дата,Тип,Категория,Сумма,Описание');
-      
+      csvRows.push(['Дата', 'Тип', 'Категория', 'Сумма', 'Описание'].map((s) => `"${s}"`).join(','));
+      const escapeCsv = (s) => `"${String(s).replace(/"/g, '""')}"`;
       transactionsData.forEach((transaction) => {
         const date = transaction.date || transaction.createdAt || '';
         const formattedDate = date ? new Date(date).toLocaleString('ru-RU') : '';
         const type = transaction.type === 'INCOME' ? 'Доход' : 'Расход';
         const amount = (transaction.amount || 0).toFixed(2);
         const category = transaction.category || '';
-        const description = (transaction.description || '').replace(/,/g, ';'); // Заменяем запятые в описании
-        
-        csvRows.push(`${formattedDate},${type},${category},${amount} ₽,"${description}"`);
+        const description = (transaction.description || '').replace(/"/g, '""');
+        csvRows.push([formattedDate, type, category, `${amount} ₽`, description].map(escapeCsv).join(','));
       });
       
       // Создаем и скачиваем файл
