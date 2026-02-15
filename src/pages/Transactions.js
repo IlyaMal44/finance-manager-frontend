@@ -331,7 +331,7 @@ const Transactions = () => {
         </Box>
       </Paper>
 
-      {/* Показано транзакций — одна компактная карточка, без дубляжа с дашбордом */}
+      {/* Показано транзакций — карточка с блоками доходов/расходов */}
       {transactions.length > 0 && (
         <Card
           sx={(theme) => ({
@@ -347,8 +347,8 @@ const Transactions = () => {
             borderColor: 'divider',
           })}
         >
-          <CardContent sx={{ py: 1.5, px: { xs: 2, sm: 2.5 } }}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <CardContent sx={{ py: 2, px: { xs: 2, sm: 2.5 } }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
               <Box
                 sx={{
                   width: { xs: 40, sm: 44 },
@@ -362,7 +362,7 @@ const Transactions = () => {
               >
                 <ReceiptLong sx={{ fontSize: { xs: 22, sm: 24 }, color: 'primary.main' }} />
               </Box>
-              <Box sx={{ minWidth: 0, flex: 1 }}>
+              <Box>
                 <Typography variant="subtitle2" color="text.secondary">
                   По текущим фильтрам
                 </Typography>
@@ -371,35 +371,110 @@ const Transactions = () => {
                   sx={{
                     fontWeight: 800,
                     color: 'primary.main',
-                    fontSize: { xs: '1.25rem', sm: '1.5rem' },
+                    fontSize: { xs: '1.25rem', sm: '1.4rem' },
                     lineHeight: 1.2,
                     fontVariantNumeric: 'tabular-nums',
                   }}
                 >
                   {filteredTransactions.length} {filteredTransactions.length === 1 ? 'транзакция' : filteredTransactions.length < 5 ? 'транзакции' : 'транзакций'}
                 </Typography>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: { xs: 1, sm: 2 }, mt: 1 }}>
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      fontWeight: 700,
-                      fontSize: { xs: '1rem', sm: '1.125rem' },
-                      color: '#4CAF50',
-                      fontVariantNumeric: 'tabular-nums',
-                    }}
-                  >
-                    Доходы: {formatCurrency(getTotalAmount('INCOME'))}
+              </Box>
+            </Box>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: 1.5,
+                mt: 1.5,
+              }}
+            >
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  p: 1.25,
+                  borderRadius: 2,
+                  bgcolor: 'rgba(76, 175, 80, 0.12)',
+                  border: '1px solid',
+                  borderColor: 'rgba(76, 175, 80, 0.3)',
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 1.5,
+                    bgcolor: 'rgba(76, 175, 80, 0.2)',
+                    display: 'grid',
+                    placeItems: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  <ArrowUpward sx={{ fontSize: 20, color: '#2E7D32' }} />
+                </Box>
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography variant="caption" sx={{ color: '#2E7D32', fontWeight: 600, display: 'block' }}>
+                    Доходы
                   </Typography>
                   <Typography
                     variant="body1"
                     sx={{
                       fontWeight: 700,
-                      fontSize: { xs: '1rem', sm: '1.125rem' },
-                      color: '#F44336',
+                      fontSize: { xs: '0.95rem', sm: '1rem' },
+                      color: '#1B5E20',
                       fontVariantNumeric: 'tabular-nums',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
                     }}
                   >
-                    Расходы: {formatCurrency(getTotalAmount('EXPENSE'))}
+                    {formatCurrency(getTotalAmount('INCOME'))}
+                  </Typography>
+                </Box>
+              </Box>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  p: 1.25,
+                  borderRadius: 2,
+                  bgcolor: 'rgba(244, 67, 54, 0.12)',
+                  border: '1px solid',
+                  borderColor: 'rgba(244, 67, 54, 0.3)',
+                }}
+              >
+                <Box
+                  sx={{
+                    width: 36,
+                    height: 36,
+                    borderRadius: 1.5,
+                    bgcolor: 'rgba(244, 67, 54, 0.2)',
+                    display: 'grid',
+                    placeItems: 'center',
+                    flexShrink: 0,
+                  }}
+                >
+                  <ArrowDownward sx={{ fontSize: 20, color: '#C62828' }} />
+                </Box>
+                <Box sx={{ minWidth: 0 }}>
+                  <Typography variant="caption" sx={{ color: '#C62828', fontWeight: 600, display: 'block' }}>
+                    Расходы
+                  </Typography>
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      fontWeight: 700,
+                      fontSize: { xs: '0.95rem', sm: '1rem' },
+                      color: '#B71C1C',
+                      fontVariantNumeric: 'tabular-nums',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {formatCurrency(getTotalAmount('EXPENSE'))}
                   </Typography>
                 </Box>
               </Box>
