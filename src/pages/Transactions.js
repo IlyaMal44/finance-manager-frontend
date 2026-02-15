@@ -378,9 +378,30 @@ const Transactions = () => {
                 >
                   {filteredTransactions.length} {filteredTransactions.length === 1 ? 'транзакция' : filteredTransactions.length < 5 ? 'транзакции' : 'транзакций'}
                 </Typography>
-                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 0.25 }}>
-                  Доходы: {formatCurrency(getTotalAmount('INCOME'))} • Расходы: {formatCurrency(getTotalAmount('EXPENSE'))}
-                </Typography>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: { xs: 1, sm: 2 }, mt: 1 }}>
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      fontWeight: 700,
+                      fontSize: { xs: '1rem', sm: '1.125rem' },
+                      color: '#4CAF50',
+                      fontVariantNumeric: 'tabular-nums',
+                    }}
+                  >
+                    Доходы: {formatCurrency(getTotalAmount('INCOME'))}
+                  </Typography>
+                  <Typography
+                    variant="body1"
+                    sx={{
+                      fontWeight: 700,
+                      fontSize: { xs: '1rem', sm: '1.125rem' },
+                      color: '#F44336',
+                      fontVariantNumeric: 'tabular-nums',
+                    }}
+                  >
+                    Расходы: {formatCurrency(getTotalAmount('EXPENSE'))}
+                  </Typography>
+                </Box>
               </Box>
             </Box>
           </CardContent>
