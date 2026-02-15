@@ -40,8 +40,6 @@ import {
   Warning,
   Savings,
   Category,
-  Refresh,
-  ArrowBack,
   ExpandMore,
   InfoOutlined,
   TipsAndUpdatesOutlined,
@@ -372,15 +370,6 @@ const Budget = () => {
             <Box sx={{ display: 'flex', gap: 1, alignItems: 'flex-start' }}>
               <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1 }}>
                 <Button
-                  variant="outlined"
-                  startIcon={<ArrowBack />}
-                  onClick={() => navigate('/dashboard')}
-                  size="medium"
-                  sx={{ minHeight: 44, justifyContent: 'center' }}
-                >
-                  Назад к дашборду
-                </Button>
-                <Button
                   variant="contained"
                   startIcon={<Add />}
                   onClick={() => {
@@ -394,27 +383,9 @@ const Budget = () => {
                   Новый бюджет
                 </Button>
               </Box>
-
-              <Tooltip title="Обновить">
-                <IconButton
-                  onClick={fetchData}
-                  disabled={loading}
-                  sx={{ mt: 0.25 }}
-                  aria-label="Обновить"
-                >
-                  <Refresh />
-                </IconButton>
-              </Tooltip>
             </Box>
           ) : (
             <Box sx={{ display: 'flex', gap: 1, justifyContent: 'flex-end', flexWrap: 'wrap' }}>
-              <Button
-                variant="outlined"
-                startIcon={<ArrowBack />}
-                onClick={() => navigate('/dashboard')}
-              >
-                Назад к дашборду
-              </Button>
               <Button
                 variant="contained"
                 startIcon={<Add />}
@@ -426,11 +397,6 @@ const Budget = () => {
               >
                 Новый бюджет
               </Button>
-              <Tooltip title="Обновить">
-                <IconButton onClick={fetchData} disabled={loading} aria-label="Обновить">
-                  <Refresh />
-                </IconButton>
-              </Tooltip>
             </Box>
           )}
         </Box>
@@ -751,12 +717,42 @@ const Budget = () => {
         >
           <Card sx={{ borderRadius: 2, boxShadow: 3 }}>
             <CardContent>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 1, mb: 1.5 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  alignItems: { xs: 'stretch', sm: 'center' },
+                  justifyContent: 'space-between',
+                  gap: 1,
+                  mb: 1.5,
+                }}
+              >
+                <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0, gap: 0.5 }}>
                   <Category color="primary" sx={{ fontSize: 30, mr: 2 }} />
                   <Typography variant="h6" sx={{ fontWeight: 600 }} noWrap>
                     Мои бюджеты
                   </Typography>
+                  <Tooltip
+                    title={
+                      isMobile
+                        ? (budgetInfoOpen ? 'Скрыть подсказку' : 'Как работают бюджеты')
+                        : 'Как работают бюджеты'
+                    }
+                  >
+                    <IconButton
+                      size="small"
+                      onClick={(e) => {
+                        if (isMobile) {
+                          setBudgetInfoOpen((v) => !v);
+                        } else {
+                          setBudgetInfoAnchorEl((prev) => (prev ? null : e.currentTarget));
+                        }
+                      }}
+                      aria-label="Как работают бюджеты"
+                    >
+                      <InfoOutlined fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
                 </Box>
 
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
@@ -778,30 +774,8 @@ const Budget = () => {
                     }}
                     sx={{ minHeight: 32, textTransform: 'none', whiteSpace: 'nowrap' }}
                   >
-                    Применить шаблон
+                    Показать шаблон
                   </Button>
-
-                <Tooltip
-                  title={
-                    isMobile
-                      ? (budgetInfoOpen ? 'Скрыть подсказку' : 'Как работают бюджеты')
-                      : 'Как работают бюджеты'
-                  }
-                >
-                  <IconButton
-                    size="small"
-                    onClick={(e) => {
-                      if (isMobile) {
-                        setBudgetInfoOpen((v) => !v);
-                      } else {
-                        setBudgetInfoAnchorEl((prev) => (prev ? null : e.currentTarget));
-                      }
-                    }}
-                    aria-label="Как работают бюджеты"
-                  >
-                    <InfoOutlined fontSize="small" />
-                  </IconButton>
-                </Tooltip>
                 </Box>
               </Box>
 

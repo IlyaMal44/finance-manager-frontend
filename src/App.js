@@ -80,7 +80,14 @@ function App() {
             }
           />
           <Route path="/" element={<Navigate to="/dashboard" />} />
-          <Route path="/budgets" element={<Budget />} />
+          <Route
+            path="/budgets"
+            element={
+              <PrivateRoute>
+                <Budget />
+              </PrivateRoute>
+            }
+          />
         </Routes>
       </Router>
     </ThemeProvider>
