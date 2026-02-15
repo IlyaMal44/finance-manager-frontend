@@ -566,21 +566,21 @@ const Transactions = () => {
                 </Grid>
                 <Grid container spacing={1} alignItems="flex-end">
                   <Grid item xs={4} sx={{ minWidth: 0 }}>
-                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.25, fontSize: '0.7rem' }}>
+                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.25, fontSize: '0.75rem' }}>
                       Дата с
                     </Typography>
                     <Box
                       sx={(theme) => ({
                         position: 'relative',
-                        height: 42,
-                        minHeight: 42,
+                        height: 48,
+                        minHeight: 48,
                         borderRadius: 1,
                         border: '1px solid',
                         borderColor: theme.palette.divider,
                         bgcolor: 'background.paper',
                         display: 'flex',
                         alignItems: 'center',
-                        px: 1,
+                        px: 1.25,
                       })}
                     >
                       <input
@@ -592,27 +592,27 @@ const Transactions = () => {
                         aria-label="Дата с"
                         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', fontSize: 16, zIndex: 1 }}
                       />
-                      <Typography variant="body1" noWrap sx={{ fontWeight: 400, fontSize: '0.8125rem', color: filterDateFrom ? 'text.primary' : 'text.secondary', pointerEvents: 'none', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <Typography variant="body1" noWrap sx={{ fontWeight: 400, fontSize: '1rem', color: filterDateFrom ? 'text.primary' : 'text.secondary', pointerEvents: 'none', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {filterDateFrom ? formatDateForDisplay(filterDateFrom) : 'дд.мм.гггг'}
                       </Typography>
                     </Box>
                   </Grid>
                   <Grid item xs={4} sx={{ minWidth: 0 }}>
-                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.25, fontSize: '0.7rem' }}>
+                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.25, fontSize: '0.75rem' }}>
                       Дата по
                     </Typography>
                     <Box
                       sx={(theme) => ({
                         position: 'relative',
-                        height: 42,
-                        minHeight: 42,
+                        height: 48,
+                        minHeight: 48,
                         borderRadius: 1,
                         border: '1px solid',
                         borderColor: theme.palette.divider,
                         bgcolor: 'background.paper',
                         display: 'flex',
                         alignItems: 'center',
-                        px: 1,
+                        px: 1.25,
                       })}
                     >
                       <input
@@ -624,7 +624,7 @@ const Transactions = () => {
                         aria-label="Дата по"
                         style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', fontSize: 16, zIndex: 1 }}
                       />
-                      <Typography variant="body1" noWrap sx={{ fontWeight: 400, fontSize: '0.8125rem', color: filterDateTo ? 'text.primary' : 'text.secondary', pointerEvents: 'none', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <Typography variant="body1" noWrap sx={{ fontWeight: 400, fontSize: '1rem', color: filterDateTo ? 'text.primary' : 'text.secondary', pointerEvents: 'none', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {filterDateTo ? formatDateForDisplay(filterDateTo) : 'дд.мм.гггг'}
                       </Typography>
                     </Box>
@@ -634,7 +634,7 @@ const Transactions = () => {
                       variant="outlined"
                       onClick={() => { setFilterType('ALL'); setFilterCategory(''); setFilterDateFrom(''); setFilterDateTo(''); }}
                       fullWidth
-                      sx={{ minHeight: 42, fontSize: '0.8125rem', py: 0.75, whiteSpace: 'nowrap' }}
+                      sx={{ minHeight: 48, fontSize: '0.875rem', py: 0.75, whiteSpace: 'nowrap' }}
                     >
                       Сбросить
                     </Button>
