@@ -28,7 +28,6 @@ import {
   MoneyOff,
   PieChart,
   Category,
-  Refresh,
   ArrowUpward,
   ArrowDownward,
   Warning,
@@ -449,22 +448,17 @@ const Dashboard = () => {
             )}
           </Box>
 
-          <Box sx={{ display: 'flex', gap: 0.75, alignItems: 'center' }}>
-            <Tooltip title="Экспортировать данные">
-              <IconButton 
-                onClick={exportData} 
-                disabled={loading} 
-                size="small"
-                sx={{ p: 0.75, bgcolor: 'success.light', color: 'white', '&:hover': { bgcolor: 'success.main' } }}
-              >
-                <Download fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Обновить данные">
-              <IconButton onClick={fetchStatistics} disabled={loading} size="small" sx={{ p: 0.75, bgcolor: 'primary.light', color: 'white' }}>
-                <Refresh fontSize="small" />
-              </IconButton>
-            </Tooltip>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            <Button
+              variant="contained"
+              size="small"
+              onClick={exportData}
+              disabled={loading}
+              startIcon={<Download />}
+              sx={{ bgcolor: 'success.main', color: 'white', '&:hover': { bgcolor: 'success.dark' } }}
+            >
+              Экспорт данных
+            </Button>
           </Box>
         </Box>
       </Paper>
