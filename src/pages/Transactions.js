@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axiosConfig';
 import {
@@ -39,6 +39,7 @@ import {
   Edit,
   Delete,
   ReceiptLong,
+  FilterList,
 } from '@mui/icons-material';
 
 const Transactions = () => {
@@ -48,11 +49,15 @@ const Transactions = () => {
   const [error, setError] = useState('');
   const [filterType, setFilterType] = useState('ALL');
   const [filterCategory, setFilterCategory] = useState('');
+  const [filterDateFrom, setFilterDateFrom] = useState('');
+  const [filterDateTo, setFilterDateTo] = useState('');
   const [selectedTransaction, setSelectedTransaction] = useState(null);
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editTransaction, setEditTransaction] = useState(null);
   const [transactionsPage, setTransactionsPage] = useState(1);
+  const dateFromInputRef = useRef(null);
+  const dateToInputRef = useRef(null);
   const navigate = useNavigate();
   const isMobile = useMediaQuery((theme) => theme.breakpoints.down('sm'));
 
@@ -119,7 +124,7 @@ const Transactions = () => {
 
   useEffect(() => {
     setTransactionsPage(1);
-  }, [filterType, filterCategory]);
+  }, [filterType, filterCategory, filterDateFrom, filterDateTo]);
 
   const handleViewTransaction = (transaction) => {
     setSelectedTransaction(transaction);
@@ -231,6 +236,21 @@ const Transactions = () => {
 
     if (filterCategory) {
       filtered = filtered.filter((t) => t.category === filterCategory);
+    }
+
+    if (filterDateFrom || filterDateTo) {
+      filtered = filtered.filter((t) => {
+        const raw = t.date || t.createdAt;
+        if (!raw) return false;
+        const d = new Date(raw);
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        const dateStr = `${y}-${m}-${day}`;
+        if (filterDateFrom && dateStr < filterDateFrom) return false;
+        if (filterDateTo && dateStr > filterDateTo) return false;
+        return true;
+      });
     }
 
     return filtered.sort(
@@ -365,83 +385,242 @@ const Transactions = () => {
       )}
 
       {/* Фильтры - показываем только если есть транзакции */}
-      {transactions.length > 0 && (
-        <Paper sx={{ p: 2, mb: 3 }}>
-          <Grid container spacing={2} alignItems="center">
-            <Grid item xs={12} md={4}>
-              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
-                Тип транзакции
+      {transactions.length > 0 && (() => {
+        const formatDateForDisplay = (ymd) => {
+          if (!ymd) return '';
+          const [y, m, d] = ymd.split('-');
+          return d && m && y ? `${d}.${m}.${y}` : '';
+        };
+        return (
+          <Paper
+            variant="outlined"
+            sx={(theme) => ({
+              p: { xs: 1.5, sm: 2.5 },
+              mb: { xs: 2, sm: 3 },
+              borderRadius: 2.5,
+              borderColor: 'divider',
+              background:
+                theme.palette.mode === 'dark'
+                  ? 'linear-gradient(135deg, rgba(25,118,210,0.08), rgba(0,0,0,0) 60%)'
+                  : 'linear-gradient(135deg, rgba(25,118,210,0.05), rgba(255,255,255,0) 60%)',
+            })}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: { xs: 1, sm: 2 } }}>
+              <FilterList color="primary" sx={{ fontSize: { xs: 22, sm: 28 } }} />
+              <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'primary.main', fontSize: { xs: '0.95rem', sm: 'inherit' } }}>
+                Фильтры
               </Typography>
-              <TextField
-                select
-                fullWidth
-                size="small"
-                value={filterType}
-                onChange={(e) => setFilterType(e.target.value)}
+            </Box>
+            <Grid container spacing={{ xs: 1.5, sm: 2 }} alignItems="flex-end">
+              <Grid item xs={12} sm={6} md={3}>
+                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.25, fontSize: { xs: '0.75rem', sm: 'inherit' } }}>
+                  Тип
+                </Typography>
+                <TextField
+                  select
+                  fullWidth
+                  size="small"
+                  value={filterType}
+                  onChange={(e) => setFilterType(e.target.value)}
+                  variant="outlined"
+                  sx={(theme) => ({
+                    '& .MuiOutlinedInput-root': {
+                      bgcolor: 'background.paper',
+                      minHeight: { xs: 48, sm: 40 },
+                      fontSize: { xs: '16px', sm: 'inherit' },
+                      color: theme.palette.text.primary,
+                    },
+                    '& .MuiSelect-select': { fontSize: { xs: '16px', sm: 'inherit' } },
+                  })}
                 SelectProps={{
                   displayEmpty: true,
                   renderValue: (selected) => {
-                    if (selected === 'ALL') {
-                      return <Typography color="text.secondary">Все типы</Typography>;
-                    }
-                    return selected === 'INCOME' ? 'Доходы' : 'Расходы';
-                  }
-                }}
-              >
-                <MenuItem value="ALL">Все типы</MenuItem>
-                <MenuItem value="INCOME">Доходы</MenuItem>
-                <MenuItem value="EXPENSE">Расходы</MenuItem>
-              </TextField>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
-                Категория
-              </Typography>
-              <TextField
-                select
-                fullWidth
-                size="small"
-                value={filterCategory}
-                onChange={(e) => setFilterCategory(e.target.value)}
+                    if (selected === 'ALL') return 'Все типы';
+                      return selected === 'INCOME' ? 'Доходы' : 'Расходы';
+                    },
+                  }}
+                >
+                  <MenuItem value="ALL">Все типы</MenuItem>
+                  <MenuItem value="INCOME">Доходы</MenuItem>
+                  <MenuItem value="EXPENSE">Расходы</MenuItem>
+                </TextField>
+              </Grid>
+              <Grid item xs={12} sm={6} md={3}>
+                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.25, fontSize: { xs: '0.75rem', sm: 'inherit' } }}>
+                  Категория
+                </Typography>
+                <TextField
+                  select
+                  fullWidth
+                  size="small"
+                  value={filterCategory}
+                  onChange={(e) => setFilterCategory(e.target.value)}
+                  variant="outlined"
+                  sx={(theme) => ({
+                    '& .MuiOutlinedInput-root': {
+                      bgcolor: 'background.paper',
+                      minHeight: { xs: 48, sm: 40 },
+                      fontSize: { xs: '16px', sm: 'inherit' },
+                      color: theme.palette.text.primary,
+                    },
+                    '& .MuiSelect-select': { fontSize: { xs: '16px', sm: 'inherit' } },
+                  })}
                 SelectProps={{
                   displayEmpty: true,
-                  renderValue: (selected) => {
-                    if (!selected) {
-                      return <Typography color="text.secondary">Все категории</Typography>;
-                    }
-                    return selected;
-                  }
-                }}
-              >
-                <MenuItem value="">
-                  <em>Все категории</em>
-                </MenuItem>
-                {categoriesForFilter.map((category) => (
-                  <MenuItem key={category} value={category}>
-                    {category}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.5 }}>
-                &nbsp;
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 1 }}>
+                  renderValue: (selected) => selected || 'Все категории',
+                  }}
+                >
+                  <MenuItem value="">Все категории</MenuItem>
+                  {categoriesForFilter.map((category) => (
+                    <MenuItem key={category} value={category}>
+                      {category}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              </Grid>
+              <Grid item xs={12} sm={6} md={2}>
+                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.25, fontSize: { xs: '0.75rem', sm: 'inherit' } }}>
+                  Дата с
+                </Typography>
+                {isMobile ? (
+                  <Box
+                    sx={(theme) => ({
+                      position: 'relative',
+                      minHeight: 48,
+                      borderRadius: 1,
+                      border: '1px solid',
+                      borderColor: theme.palette.divider,
+                      bgcolor: 'background.paper',
+                      display: 'flex',
+                      alignItems: 'center',
+                      px: 1.5,
+                    })}
+                  >
+                    <input
+                      ref={dateFromInputRef}
+                      type="date"
+                      value={filterDateFrom}
+                      onChange={(e) => setFilterDateFrom(e.target.value)}
+                      max={filterDateTo || undefined}
+                      aria-label="Дата с"
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        width: '100%',
+                        height: '100%',
+                        opacity: 0,
+                        cursor: 'pointer',
+                        fontSize: 16,
+                        zIndex: 1,
+                      }}
+                    />
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        fontWeight: 400,
+                        fontSize: '1rem',
+                        color: filterDateFrom ? 'text.primary' : 'text.secondary',
+                        pointerEvents: 'none',
+                      }}
+                    >
+                      {filterDateFrom ? formatDateForDisplay(filterDateFrom) : 'дд.мм.гггг'}
+                    </Typography>
+                  </Box>
+                ) : (
+                  <TextField
+                    fullWidth
+                    size="small"
+                    type="date"
+                    value={filterDateFrom}
+                    onChange={(e) => setFilterDateFrom(e.target.value)}
+                    variant="outlined"
+                    InputLabelProps={{ shrink: true }}
+                    sx={{ '& .MuiOutlinedInput-root': { bgcolor: 'background.paper', minHeight: 40 } }}
+                    inputProps={{ max: filterDateTo || undefined }}
+                  />
+                )}
+              </Grid>
+              <Grid item xs={12} sm={6} md={2}>
+                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.25, fontSize: { xs: '0.75rem', sm: 'inherit' } }}>
+                  Дата по
+                </Typography>
+                {isMobile ? (
+                  <Box
+                    sx={(theme) => ({
+                      position: 'relative',
+                      minHeight: 48,
+                      borderRadius: 1,
+                      border: '1px solid',
+                      borderColor: theme.palette.divider,
+                      bgcolor: 'background.paper',
+                      display: 'flex',
+                      alignItems: 'center',
+                      px: 1.5,
+                    })}
+                  >
+                    <input
+                      ref={dateToInputRef}
+                      type="date"
+                      value={filterDateTo}
+                      onChange={(e) => setFilterDateTo(e.target.value)}
+                      min={filterDateFrom || undefined}
+                      aria-label="Дата по"
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        width: '100%',
+                        height: '100%',
+                        opacity: 0,
+                        cursor: 'pointer',
+                        fontSize: 16,
+                        zIndex: 1,
+                      }}
+                    />
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        fontWeight: 400,
+                        fontSize: '1rem',
+                        color: filterDateTo ? 'text.primary' : 'text.secondary',
+                        pointerEvents: 'none',
+                      }}
+                    >
+                      {filterDateTo ? formatDateForDisplay(filterDateTo) : 'дд.мм.гггг'}
+                    </Typography>
+                  </Box>
+                ) : (
+                  <TextField
+                    fullWidth
+                    size="small"
+                    type="date"
+                    value={filterDateTo}
+                    onChange={(e) => setFilterDateTo(e.target.value)}
+                    variant="outlined"
+                    InputLabelProps={{ shrink: true }}
+                    sx={{ '& .MuiOutlinedInput-root': { bgcolor: 'background.paper', minHeight: 40 } }}
+                    inputProps={{ min: filterDateFrom || undefined }}
+                  />
+                )}
+              </Grid>
+              <Grid item xs={12} sm={12} md={2}>
                 <Button
                   variant="outlined"
                   onClick={() => {
                     setFilterType('ALL');
                     setFilterCategory('');
+                    setFilterDateFrom('');
+                    setFilterDateTo('');
                   }}
+                  fullWidth
+                  sx={{ minHeight: { xs: 48, sm: 40 }, fontSize: { xs: '16px', sm: 'inherit' } }}
                 >
-                  Сбросить фильтры
+                  Сбросить
                 </Button>
-              </Box>
+              </Grid>
             </Grid>
-          </Grid>
-        </Paper>
-      )}
+          </Paper>
+        );
+      })()}
 
       {/* Таблица транзакций */}
       {transactions.length === 0 ? (
