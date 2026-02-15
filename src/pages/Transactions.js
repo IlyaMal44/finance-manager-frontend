@@ -26,6 +26,10 @@ import {
   DialogContent,
   DialogActions,
   Autocomplete,
+  Card,
+  CardContent,
+  useMediaQuery,
+  Pagination,
 } from '@mui/material';
 import {
   Visibility,
@@ -34,6 +38,7 @@ import {
   ArrowBack,
   Edit,
   Delete,
+  ReceiptLong,
 } from '@mui/icons-material';
 
 const Transactions = () => {
@@ -47,7 +52,11 @@ const Transactions = () => {
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editTransaction, setEditTransaction] = useState(null);
+  const [transactionsPage, setTransactionsPage] = useState(1);
   const navigate = useNavigate();
+  const isMobile = useMediaQuery((theme) => theme.breakpoints.down('sm'));
+
+  const ROWS_PER_PAGE = 10;
 
   // Раздельные категории для доходов и расходов
   const incomeCategories = [
@@ -107,6 +116,10 @@ const Transactions = () => {
       fetchTransactions();
     }
   }, [walletId, fetchTransactions]);
+
+  useEffect(() => {
+    setTransactionsPage(1);
+  }, [filterType, filterCategory]);
 
   const handleViewTransaction = (transaction) => {
     setSelectedTransaction(transaction);
@@ -249,6 +262,12 @@ const Transactions = () => {
   }
 
   const filteredTransactions = getFilteredTransactions();
+  const totalPages = Math.max(1, Math.ceil(filteredTransactions.length / ROWS_PER_PAGE));
+  const currentPage = Math.min(transactionsPage, totalPages);
+  const paginatedTransactions = filteredTransactions.slice(
+    (currentPage - 1) * ROWS_PER_PAGE,
+    currentPage * ROWS_PER_PAGE,
+  );
 
   return (
     <Container maxWidth="xl" sx={{ py: 3 }}>
@@ -292,28 +311,57 @@ const Transactions = () => {
         </Box>
       </Paper>
 
-      {/* Статистика - показываем только если есть транзакции */}
+      {/* Показано транзакций — одна компактная карточка, без дубляжа с дашбордом */}
       {transactions.length > 0 && (
-        <Grid container spacing={2} sx={{ mb: 3 }}>
-          <Grid item xs={12} md={4}>
-            <Paper sx={{ p: 2, bgcolor: 'primary.main', color: 'white' }}>
-              <Typography variant="subtitle2">Всего транзакций</Typography>
-              <Typography variant="h5">{filteredTransactions.length}</Typography>
-            </Paper>
-          </Grid>
-          <Grid item xs={12} md={4}>
-            <Paper sx={{ p: 2, bgcolor: '#4CAF50', color: 'white' }}>
-              <Typography variant="subtitle2">Общие доходы</Typography>
-              <Typography variant="h5">{formatCurrency(getTotalAmount('INCOME'))}</Typography>
-            </Paper>
-          </Grid>
-          <Grid item xs={12} md={4}>
-            <Paper sx={{ p: 2, bgcolor: '#F44336', color: 'white' }}>
-              <Typography variant="subtitle2">Общие расходы</Typography>
-              <Typography variant="h5">{formatCurrency(getTotalAmount('EXPENSE'))}</Typography>
-            </Paper>
-          </Grid>
-        </Grid>
+        <Card
+          sx={(theme) => ({
+            mb: 3,
+            borderRadius: 2.5,
+            boxShadow: 2,
+            overflow: 'hidden',
+            background:
+              theme.palette.mode === 'dark'
+                ? 'linear-gradient(135deg, rgba(25,118,210,0.25), rgba(0,0,0,0) 70%)'
+                : 'linear-gradient(135deg, rgba(25,118,210,0.12), rgba(255,255,255,0) 70%)',
+            border: '1px solid',
+            borderColor: 'divider',
+          })}
+        >
+          <CardContent sx={{ py: 1.5, px: { xs: 2, sm: 2.5 } }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              <Box
+                sx={{
+                  width: { xs: 40, sm: 44 },
+                  height: { xs: 40, sm: 44 },
+                  borderRadius: 2,
+                  bgcolor: 'rgba(25,118,210,0.18)',
+                  display: 'grid',
+                  placeItems: 'center',
+                  flexShrink: 0,
+                }}
+              >
+                <ReceiptLong sx={{ fontSize: { xs: 22, sm: 24 }, color: 'primary.main' }} />
+              </Box>
+              <Box sx={{ minWidth: 0, flex: 1 }}>
+                <Typography variant="subtitle2" color="text.secondary">
+                  По текущим фильтрам
+                </Typography>
+                <Typography
+                  variant="h6"
+                  sx={{
+                    fontWeight: 800,
+                    color: 'primary.main',
+                    fontSize: { xs: '1.25rem', sm: '1.5rem' },
+                    lineHeight: 1.2,
+                    fontVariantNumeric: 'tabular-nums',
+                  }}
+                >
+                  {filteredTransactions.length} {filteredTransactions.length === 1 ? 'транзакция' : filteredTransactions.length < 5 ? 'транзакции' : 'транзакций'}
+                </Typography>
+              </Box>
+            </Box>
+          </CardContent>
+        </Card>
       )}
 
       {/* Фильтры - показываем только если есть транзакции */}
@@ -420,118 +468,205 @@ const Transactions = () => {
         </Box>
       ) : (
         <>
-          <TableContainer component={Paper}>
-            <Table>
-              <TableHead>
-                <TableRow>
-                  <TableCell>Дата</TableCell>
-                  <TableCell>Тип</TableCell>
-                  <TableCell>Категория</TableCell>
-                  <TableCell>Описание</TableCell>
-                  <TableCell align="right">Сумма</TableCell>
-                  <TableCell align="center">Действия</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {filteredTransactions.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                      <Typography color="text.secondary">
-                        Нет транзакций, соответствующих выбранным фильтрам
+          {filteredTransactions.length === 0 ? (
+            <Paper variant="outlined" sx={{ p: 3, borderRadius: 2, textAlign: 'center' }}>
+              <Typography color="text.secondary">
+                Нет транзакций, соответствующих выбранным фильтрам
+              </Typography>
+            </Paper>
+          ) : isMobile ? (
+            <>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, mb: 2 }}>
+                {paginatedTransactions.map((transaction) => (
+                  <Paper
+                    key={transaction.id}
+                    variant="outlined"
+                    sx={{
+                      p: 2,
+                      borderRadius: 2,
+                      border: '1px solid',
+                      borderColor: 'divider',
+                      borderLeft: '4px solid',
+                      borderLeftColor: transaction.type === 'INCOME' ? '#4CAF50' : '#F44336',
+                    }}
+                  >
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1, mb: 1 }}>
+                      <Typography variant="caption" color="text.secondary">
+                        {formatDate(transaction.date || transaction.createdAt)}
                       </Typography>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredTransactions.map((transaction) => (
-                    <TableRow
-                      key={transaction.id}
-                      hover
-                      sx={{
-                        '&:hover': {
-                          backgroundColor:
-                            transaction.type === 'INCOME'
-                              ? 'rgba(76, 175, 80, 0.04)'
-                              : 'rgba(244, 67, 54, 0.04)',
-                        },
-                      }}
-                    >
-                      <TableCell>{formatDate(transaction.date || transaction.createdAt)}</TableCell>
-                      <TableCell>
-                        <Chip
-                          icon={getTypeIcon(transaction.type)}
-                          label={transaction.type === 'INCOME' ? 'Доход' : 'Расход'}
-                          color={transaction.type === 'INCOME' ? 'success' : 'error'}
-                          size="small"
-                          variant="outlined"
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Chip
-                          label={transaction.category}
-                          size="small"
-                          sx={{
+                      <Chip
+                        icon={getTypeIcon(transaction.type)}
+                        label={transaction.type === 'INCOME' ? 'Доход' : 'Расход'}
+                        color={transaction.type === 'INCOME' ? 'success' : 'error'}
+                        size="small"
+                        variant="outlined"
+                      />
+                    </Box>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }} noWrap>
+                      {transaction.category}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }} noWrap>
+                      {transaction.description || 'Без описания'}
+                    </Typography>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+                      <Typography
+                        variant="body1"
+                        sx={{
+                          fontWeight: 700,
+                          color: transaction.type === 'INCOME' ? '#4CAF50' : '#F44336',
+                          fontVariantNumeric: 'tabular-nums',
+                        }}
+                      >
+                        {transaction.type === 'INCOME' ? '+' : '−'}
+                        {formatCurrency(transaction.amount)}
+                      </Typography>
+                      <Box sx={{ display: 'flex', gap: 0.5 }}>
+                        <IconButton size="small" onClick={() => handleViewTransaction(transaction)} color="primary" aria-label="Просмотреть">
+                          <Visibility fontSize="small" />
+                        </IconButton>
+                        <IconButton size="small" onClick={() => handleOpenEditDialog(transaction)} color="primary" aria-label="Изменить">
+                          <Edit fontSize="small" />
+                        </IconButton>
+                        <IconButton size="small" onClick={() => handleDeleteTransaction(transaction)} color="error" aria-label="Удалить">
+                          <Delete fontSize="small" />
+                        </IconButton>
+                      </Box>
+                    </Box>
+                  </Paper>
+                ))}
+              </Box>
+              {totalPages > 1 && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2, mb: 2 }}>
+                  <Pagination
+                    count={totalPages}
+                    page={currentPage}
+                    onChange={(_, p) => setTransactionsPage(p)}
+                    color="primary"
+                    size="large"
+                    showFirstButton
+                    showLastButton
+                  />
+                </Box>
+              )}
+            </>
+          ) : (
+            <>
+              <TableContainer component={Paper}>
+                <Table>
+                  <TableHead>
+                    <TableRow>
+                      <TableCell>Дата</TableCell>
+                      <TableCell>Тип</TableCell>
+                      <TableCell>Категория</TableCell>
+                      <TableCell>Описание</TableCell>
+                      <TableCell align="right">Сумма</TableCell>
+                      <TableCell align="center">Действия</TableCell>
+                    </TableRow>
+                  </TableHead>
+                  <TableBody>
+                    {paginatedTransactions.map((transaction) => (
+                      <TableRow
+                        key={transaction.id}
+                        hover
+                        sx={{
+                          '&:hover': {
                             backgroundColor:
                               transaction.type === 'INCOME'
-                                ? 'rgba(76, 175, 80, 0.1)'
-                                : 'rgba(244, 67, 54, 0.1)',
-                            color: transaction.type === 'INCOME' ? '#4CAF50' : '#F44336',
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        <Typography variant="body2" sx={{ maxWidth: 200 }}>
-                          {transaction.description || 'Без описания'}
-                        </Typography>
-                      </TableCell>
-                      <TableCell align="right">
-                        <Typography
-                          variant="body1"
-                          sx={{
-                            fontWeight: 600,
-                            color: transaction.type === 'INCOME' ? '#4CAF50' : '#F44336',
-                          }}
-                        >
-                          {transaction.type === 'INCOME' ? '+' : '-'}
-                          {formatCurrency(transaction.amount)}
-                        </Typography>
-                      </TableCell>
-                      <TableCell align="center">
-                        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
-                          <Tooltip title="Просмотреть детали">
-                            <IconButton
-                              size="small"
-                              onClick={() => handleViewTransaction(transaction)}
-                              color="primary"
-                            >
-                              <Visibility fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Изменить">
-                            <IconButton
-                              size="small"
-                              onClick={() => handleOpenEditDialog(transaction)}
-                              color="primary"
-                            >
-                              <Edit fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                          <Tooltip title="Удалить">
-                            <IconButton
-                              size="small"
-                              onClick={() => handleDeleteTransaction(transaction)}
-                              color="error"
-                            >
-                              <Delete fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        </Box>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </TableContainer>
+                                ? 'rgba(76, 175, 80, 0.04)'
+                                : 'rgba(244, 67, 54, 0.04)',
+                          },
+                        }}
+                      >
+                        <TableCell>{formatDate(transaction.date || transaction.createdAt)}</TableCell>
+                        <TableCell>
+                          <Chip
+                            icon={getTypeIcon(transaction.type)}
+                            label={transaction.type === 'INCOME' ? 'Доход' : 'Расход'}
+                            color={transaction.type === 'INCOME' ? 'success' : 'error'}
+                            size="small"
+                            variant="outlined"
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Chip
+                            label={transaction.category}
+                            size="small"
+                            sx={{
+                              backgroundColor:
+                                transaction.type === 'INCOME'
+                                  ? 'rgba(76, 175, 80, 0.1)'
+                                  : 'rgba(244, 67, 54, 0.1)',
+                              color: transaction.type === 'INCOME' ? '#4CAF50' : '#F44336',
+                            }}
+                          />
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2" sx={{ maxWidth: 200 }}>
+                            {transaction.description || 'Без описания'}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="right">
+                          <Typography
+                            variant="body1"
+                            sx={{
+                              fontWeight: 600,
+                              color: transaction.type === 'INCOME' ? '#4CAF50' : '#F44336',
+                            }}
+                          >
+                            {transaction.type === 'INCOME' ? '+' : '-'}
+                            {formatCurrency(transaction.amount)}
+                          </Typography>
+                        </TableCell>
+                        <TableCell align="center">
+                          <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
+                            <Tooltip title="Просмотреть детали">
+                              <IconButton
+                                size="small"
+                                onClick={() => handleViewTransaction(transaction)}
+                                color="primary"
+                              >
+                                <Visibility fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Изменить">
+                              <IconButton
+                                size="small"
+                                onClick={() => handleOpenEditDialog(transaction)}
+                                color="primary"
+                              >
+                                <Edit fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                            <Tooltip title="Удалить">
+                              <IconButton
+                                size="small"
+                                onClick={() => handleDeleteTransaction(transaction)}
+                                color="error"
+                              >
+                                <Delete fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </TableContainer>
+              {totalPages > 1 && (
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 2, mb: 2 }}>
+                  <Pagination
+                    count={totalPages}
+                    page={currentPage}
+                    onChange={(_, p) => setTransactionsPage(p)}
+                    color="primary"
+                    showFirstButton
+                    showLastButton
+                  />
+                </Box>
+              )}
+            </>
+          )}
 
           {/* Диалог просмотра транзакции */}
           <Dialog open={viewDialogOpen} onClose={handleCloseDialog} maxWidth="sm" fullWidth>
