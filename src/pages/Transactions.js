@@ -299,7 +299,7 @@ const Transactions = () => {
         </Alert>
       )}
 
-      {/* Заголовок в формочке — как на дашборде и в бюджетах */}
+      {/* Заголовок в формочке — как на главной и в бюджетах */}
       <Paper
         variant="outlined"
         sx={(theme) => ({
@@ -339,6 +339,8 @@ const Transactions = () => {
             borderRadius: 2.5,
             boxShadow: 2,
             overflow: 'hidden',
+            height: { xs: 172, sm: 'auto' },
+            minHeight: { xs: 172, sm: 'auto' },
             background:
               theme.palette.mode === 'dark'
                 ? 'linear-gradient(135deg, rgba(25,118,210,0.25), rgba(0,0,0,0) 70%)'
@@ -347,7 +349,7 @@ const Transactions = () => {
             borderColor: 'divider',
           })}
         >
-          <CardContent sx={{ py: 2, px: { xs: 2, sm: 2.5 } }}>
+          <CardContent sx={{ py: 2, px: { xs: 2, sm: 2.5 }, height: '100%', overflow: 'hidden' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
               <Box
                 sx={{
@@ -494,7 +496,7 @@ const Transactions = () => {
           <Paper
             variant="outlined"
             sx={(theme) => ({
-              p: { xs: 1.5, sm: 2.5 },
+              p: { xs: 1, sm: 2.5 },
               mb: { xs: 2, sm: 3 },
               borderRadius: 2.5,
               borderColor: 'divider',
@@ -504,15 +506,145 @@ const Transactions = () => {
                   : 'linear-gradient(135deg, rgba(25,118,210,0.05), rgba(255,255,255,0) 60%)',
             })}
           >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: { xs: 1, sm: 2 } }}>
-              <FilterList color="primary" sx={{ fontSize: { xs: 22, sm: 28 } }} />
-              <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'primary.main', fontSize: { xs: '0.95rem', sm: 'inherit' } }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: { xs: 0.75, sm: 2 } }}>
+              <FilterList color="primary" sx={{ fontSize: { xs: 20, sm: 28 } }} />
+              <Typography variant="subtitle1" sx={{ fontWeight: 700, color: 'primary.main', fontSize: { xs: '0.875rem', sm: 'inherit' } }}>
                 Фильтры
               </Typography>
             </Box>
-            <Grid container spacing={{ xs: 1.5, sm: 2 }} alignItems="flex-end">
+            {isMobile ? (
+              <>
+                <Grid container spacing={1} alignItems="flex-end" sx={{ mb: 1 }}>
+                  <Grid item xs={6}>
+                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.25, fontSize: '0.7rem' }}>
+                      Тип
+                    </Typography>
+                    <TextField
+                      select
+                      fullWidth
+                      size="small"
+                      value={filterType}
+                      onChange={(e) => setFilterType(e.target.value)}
+                      variant="outlined"
+                      sx={(theme) => ({
+                        '& .MuiOutlinedInput-root': { bgcolor: 'background.paper', minHeight: 42, fontSize: '14px', color: theme.palette.text.primary },
+                        '& .MuiSelect-select': { fontSize: '14px' },
+                      })}
+                      SelectProps={{
+                        displayEmpty: true,
+                        renderValue: (s) => (s === 'ALL' ? 'Все типы' : s === 'INCOME' ? 'Доходы' : 'Расходы'),
+                      }}
+                    >
+                      <MenuItem value="ALL">Все типы</MenuItem>
+                      <MenuItem value="INCOME">Доходы</MenuItem>
+                      <MenuItem value="EXPENSE">Расходы</MenuItem>
+                    </TextField>
+                  </Grid>
+                  <Grid item xs={6}>
+                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.25, fontSize: '0.7rem' }}>
+                      Категория
+                    </Typography>
+                    <TextField
+                      select
+                      fullWidth
+                      size="small"
+                      value={filterCategory}
+                      onChange={(e) => setFilterCategory(e.target.value)}
+                      variant="outlined"
+                      sx={(theme) => ({
+                        '& .MuiOutlinedInput-root': { bgcolor: 'background.paper', minHeight: 42, fontSize: '14px', color: theme.palette.text.primary },
+                        '& .MuiSelect-select': { fontSize: '14px' },
+                      })}
+                      SelectProps={{ displayEmpty: true, renderValue: (s) => s || 'Все категории' }}
+                    >
+                      <MenuItem value="">Все категории</MenuItem>
+                      {categoriesForFilter.map((category) => (
+                        <MenuItem key={category} value={category}>{category}</MenuItem>
+                      ))}
+                    </TextField>
+                  </Grid>
+                </Grid>
+                <Grid container spacing={1} alignItems="flex-end">
+                  <Grid item xs={4} sx={{ minWidth: 0 }}>
+                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.25, fontSize: '0.7rem' }}>
+                      Дата с
+                    </Typography>
+                    <Box
+                      sx={(theme) => ({
+                        position: 'relative',
+                        height: 42,
+                        minHeight: 42,
+                        borderRadius: 1,
+                        border: '1px solid',
+                        borderColor: theme.palette.divider,
+                        bgcolor: 'background.paper',
+                        display: 'flex',
+                        alignItems: 'center',
+                        px: 1,
+                      })}
+                    >
+                      <input
+                        ref={dateFromInputRef}
+                        type="date"
+                        value={filterDateFrom}
+                        onChange={(e) => setFilterDateFrom(e.target.value)}
+                        max={filterDateTo || undefined}
+                        aria-label="Дата с"
+                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', fontSize: 16, zIndex: 1 }}
+                      />
+                      <Typography variant="body1" noWrap sx={{ fontWeight: 400, fontSize: '0.8125rem', color: filterDateFrom ? 'text.primary' : 'text.secondary', pointerEvents: 'none', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {filterDateFrom ? formatDateForDisplay(filterDateFrom) : 'дд.мм.гггг'}
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={4} sx={{ minWidth: 0 }}>
+                    <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.25, fontSize: '0.7rem' }}>
+                      Дата по
+                    </Typography>
+                    <Box
+                      sx={(theme) => ({
+                        position: 'relative',
+                        height: 42,
+                        minHeight: 42,
+                        borderRadius: 1,
+                        border: '1px solid',
+                        borderColor: theme.palette.divider,
+                        bgcolor: 'background.paper',
+                        display: 'flex',
+                        alignItems: 'center',
+                        px: 1,
+                      })}
+                    >
+                      <input
+                        ref={dateToInputRef}
+                        type="date"
+                        value={filterDateTo}
+                        onChange={(e) => setFilterDateTo(e.target.value)}
+                        min={filterDateFrom || undefined}
+                        aria-label="Дата по"
+                        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', fontSize: 16, zIndex: 1 }}
+                      />
+                      <Typography variant="body1" noWrap sx={{ fontWeight: 400, fontSize: '0.8125rem', color: filterDateTo ? 'text.primary' : 'text.secondary', pointerEvents: 'none', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                        {filterDateTo ? formatDateForDisplay(filterDateTo) : 'дд.мм.гггг'}
+                      </Typography>
+                    </Box>
+                  </Grid>
+                  <Grid item xs={4} sx={{ minWidth: 0 }}>
+                    <Button
+                      variant="outlined"
+                      onClick={() => { setFilterType('ALL'); setFilterCategory(''); setFilterDateFrom(''); setFilterDateTo(''); }}
+                      fullWidth
+                      sx={{ minHeight: 42, fontSize: '0.8125rem', py: 0.75, whiteSpace: 'nowrap' }}
+                    >
+                      Сбросить
+                    </Button>
+                  </Grid>
+                </Grid>
+              </>
+            ) : (
+            <Grid container spacing={2} alignItems="flex-end">
               <Grid item xs={6} sm={6} md={3}>
-                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.25, fontSize: { xs: '0.75rem', sm: 'inherit' } }}>
+                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.25, fontSize: { xs: '0.7rem', sm: 'inherit' } }}>
                   Тип
                 </Typography>
                 <TextField
@@ -525,11 +657,11 @@ const Transactions = () => {
                   sx={(theme) => ({
                     '& .MuiOutlinedInput-root': {
                       bgcolor: 'background.paper',
-                      minHeight: { xs: 48, sm: 40 },
-                      fontSize: { xs: '16px', sm: 'inherit' },
+                      minHeight: { xs: 42, sm: 40 },
+                      fontSize: { xs: '14px', sm: 'inherit' },
                       color: theme.palette.text.primary,
                     },
-                    '& .MuiSelect-select': { fontSize: { xs: '16px', sm: 'inherit' } },
+                    '& .MuiSelect-select': { fontSize: { xs: '14px', sm: 'inherit' } },
                   })}
                 SelectProps={{
                   displayEmpty: true,
@@ -545,7 +677,7 @@ const Transactions = () => {
                 </TextField>
               </Grid>
               <Grid item xs={6} sm={6} md={3}>
-                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.25, fontSize: { xs: '0.75rem', sm: 'inherit' } }}>
+                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.25, fontSize: { xs: '0.7rem', sm: 'inherit' } }}>
                   Категория
                 </Typography>
                 <TextField
@@ -558,11 +690,11 @@ const Transactions = () => {
                   sx={(theme) => ({
                     '& .MuiOutlinedInput-root': {
                       bgcolor: 'background.paper',
-                      minHeight: { xs: 48, sm: 40 },
-                      fontSize: { xs: '16px', sm: 'inherit' },
+                      minHeight: { xs: 42, sm: 40 },
+                      fontSize: { xs: '14px', sm: 'inherit' },
                       color: theme.palette.text.primary,
                     },
-                    '& .MuiSelect-select': { fontSize: { xs: '16px', sm: 'inherit' } },
+                    '& .MuiSelect-select': { fontSize: { xs: '14px', sm: 'inherit' } },
                   })}
                 SelectProps={{
                   displayEmpty: true,
@@ -577,22 +709,23 @@ const Transactions = () => {
                   ))}
                 </TextField>
               </Grid>
-              <Grid item xs={4} sm={6} md={2}>
-                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.25, fontSize: { xs: '0.75rem', sm: 'inherit' } }}>
+              <Grid item xs={4} sm={6} md={2} sx={{ minWidth: 0 }}>
+                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.25, fontSize: { xs: '0.7rem', sm: 'inherit' } }}>
                   Дата с
                 </Typography>
                 {isMobile ? (
                   <Box
                     sx={(theme) => ({
                       position: 'relative',
-                      minHeight: 48,
+                      height: 42,
+                      minHeight: 42,
                       borderRadius: 1,
                       border: '1px solid',
                       borderColor: theme.palette.divider,
                       bgcolor: 'background.paper',
                       display: 'flex',
                       alignItems: 'center',
-                      px: 1.5,
+                      px: 1,
                     })}
                   >
                     <input
@@ -615,11 +748,14 @@ const Transactions = () => {
                     />
                     <Typography
                       variant="body1"
+                      noWrap
                       sx={{
                         fontWeight: 400,
-                        fontSize: '1rem',
+                        fontSize: { xs: '0.8125rem', sm: '1rem' },
                         color: filterDateFrom ? 'text.primary' : 'text.secondary',
                         pointerEvents: 'none',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
                       }}
                     >
                       {filterDateFrom ? formatDateForDisplay(filterDateFrom) : 'дд.мм.гггг'}
@@ -639,22 +775,23 @@ const Transactions = () => {
                   />
                 )}
               </Grid>
-              <Grid item xs={4} sm={6} md={2}>
-                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.25, fontSize: { xs: '0.75rem', sm: 'inherit' } }}>
+              <Grid item xs={4} sm={6} md={2} sx={{ minWidth: 0 }}>
+                <Typography variant="subtitle2" color="text.secondary" sx={{ mb: 0.25, fontSize: { xs: '0.7rem', sm: 'inherit' } }}>
                   Дата по
                 </Typography>
                 {isMobile ? (
                   <Box
                     sx={(theme) => ({
                       position: 'relative',
-                      minHeight: 48,
+                      height: 42,
+                      minHeight: 42,
                       borderRadius: 1,
                       border: '1px solid',
                       borderColor: theme.palette.divider,
                       bgcolor: 'background.paper',
                       display: 'flex',
                       alignItems: 'center',
-                      px: 1.5,
+                      px: 1,
                     })}
                   >
                     <input
@@ -677,11 +814,14 @@ const Transactions = () => {
                     />
                     <Typography
                       variant="body1"
+                      noWrap
                       sx={{
                         fontWeight: 400,
-                        fontSize: '1rem',
+                        fontSize: { xs: '0.8125rem', sm: '1rem' },
                         color: filterDateTo ? 'text.primary' : 'text.secondary',
                         pointerEvents: 'none',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
                       }}
                     >
                       {filterDateTo ? formatDateForDisplay(filterDateTo) : 'дд.мм.гггг'}
@@ -701,7 +841,7 @@ const Transactions = () => {
                   />
                 )}
               </Grid>
-              <Grid item xs={4} sm={12} md={2}>
+              <Grid item xs={4} sm={12} md={2} sx={{ minWidth: 0 }}>
                 <Button
                   variant="outlined"
                   onClick={() => {
@@ -711,12 +851,13 @@ const Transactions = () => {
                     setFilterDateTo('');
                   }}
                   fullWidth
-                  sx={{ minHeight: { xs: 48, sm: 40 }, fontSize: { xs: '16px', sm: 'inherit' } }}
+                  sx={{ minHeight: { xs: 42, sm: 40 }, fontSize: { xs: '0.8125rem', sm: 'inherit' }, py: { xs: 0.75, sm: 1 }, whiteSpace: 'nowrap' }}
                 >
                   Сбросить
                 </Button>
               </Grid>
             </Grid>
+            )}
           </Paper>
         );
       })()}
@@ -733,7 +874,7 @@ const Transactions = () => {
             sx={{ mb: 3, maxWidth: 500, mx: 'auto' }}
           >
             Вы еще не создали ни одной транзакции.
-            Перейдите на дашборд и добавьте свою первую транзакцию!
+            Перейдите на главную и добавьте свою первую транзакцию!
           </Typography>
           <Button
             variant="contained"
@@ -741,7 +882,7 @@ const Transactions = () => {
             startIcon={<ArrowBack />}
             sx={{ mt: 2 }}
           >
-            Перейти к дашборду
+            Перейти на главную
           </Button>
         </Box>
       ) : (
