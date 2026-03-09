@@ -58,10 +58,16 @@ function App() {
       <CssBaseline />
       <Router>
         <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/login" element={<Login mode={mode} toggleMode={toggleMode} />} />
+          <Route path="/register" element={<Register mode={mode} toggleMode={toggleMode} />} />
+          <Route
+            path="/forgot-password"
+            element={<ForgotPassword mode={mode} toggleMode={toggleMode} />}
+          />
+          <Route
+            path="/reset-password"
+            element={<ResetPassword mode={mode} toggleMode={toggleMode} />}
+          />
           <Route
             path="/dashboard"
             element={

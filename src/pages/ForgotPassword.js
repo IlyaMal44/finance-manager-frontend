@@ -5,12 +5,11 @@ import {
   Alert,
   Box,
   Button,
-  Container,
   TextField,
-  Typography,
 } from '@mui/material';
+import AuthLayout from '../components/Auth/AuthLayout';
 
-const ForgotPassword = () => {
+const ForgotPassword = ({ mode, toggleMode }) => {
   const [mail, setMail] = useState('');
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
@@ -33,63 +32,64 @@ const ForgotPassword = () => {
   };
 
   return (
-    <Container maxWidth="sm">
-      <Box sx={{ mt: 8, p: 4, boxShadow: 3, borderRadius: 2 }}>
-        <Typography variant="h4" gutterBottom align="center">
-          Восстановление пароля
-        </Typography>
+    <AuthLayout
+      mode={mode}
+      toggleMode={toggleMode}
+      title='Восстановление пароля'
+      subtitle='Введите почту, и мы отправим ссылку для сброса пароля.'
+      highlights={[
+        'Быстрое восстановление доступа',
+        'Ссылка придёт на почту из аккаунта',
+        'После смены пароля можно сразу войти',
+      ]}
+    >
+      {error && (
+        <Alert severity='error' sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
 
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Введите почту, которую вы указывали при регистрации. Мы отправим ссылку для сброса пароля.
-        </Typography>
+      {success && (
+        <Alert severity='success' sx={{ mb: 2 }}>
+          Если такая почта зарегистрирована — мы отправили письмо со ссылкой для сброса пароля.
+        </Alert>
+      )}
 
-        {error && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {error}
-          </Alert>
-        )}
+      <Box component='form' onSubmit={handleSubmit} sx={{ display: 'grid', gap: 2 }}>
+        <TextField
+          fullWidth
+          label='Почта'
+          type='email'
+          value={mail}
+          onChange={(e) => setMail(e.target.value)}
+          required
+          disabled={loading}
+        />
 
-        {success && (
-          <Alert severity="success" sx={{ mb: 2 }}>
-            Если такая почта зарегистрирована — мы отправили письмо со ссылкой для сброса пароля.
-          </Alert>
-        )}
+        <Button
+          type='submit'
+          fullWidth
+          variant='contained'
+          size='large'
+          sx={{ mt: 1, py: 1.35, fontWeight: 700, borderRadius: 2.5 }}
+          disabled={loading}
+        >
+          {loading ? 'Отправляем...' : 'Отправить ссылку'}
+        </Button>
 
-        <form onSubmit={handleSubmit}>
-          <TextField
-            fullWidth
-            label="Почта"
-            type="email"
-            margin="normal"
-            value={mail}
-            onChange={(e) => setMail(e.target.value)}
-            required
-            disabled={loading}
-          />
-
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            sx={{ mt: 2, mb: 1 }}
-            disabled={loading}
-          >
-            {loading ? 'Отправляем...' : 'Отправить ссылку'}
-          </Button>
-
-          <Button
-            fullWidth
-            variant="outlined"
-            onClick={() => navigate('/login')}
-            disabled={loading}
-          >
-            Назад ко входу
-          </Button>
-        </form>
+        <Button
+          fullWidth
+          variant='outlined'
+          size='large'
+          onClick={() => navigate('/login')}
+          disabled={loading}
+          sx={{ py: 1.2, borderRadius: 2.5 }}
+        >
+          Назад ко входу
+        </Button>
       </Box>
-    </Container>
+    </AuthLayout>
   );
 };
 
 export default ForgotPassword;
-

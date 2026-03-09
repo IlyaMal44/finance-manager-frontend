@@ -2,19 +2,18 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axiosConfig';
 import {
-  Container,
-  TextField,
-  Button,
-  Typography,
-  Box,
   Alert,
+  Box,
+  Button,
+  TextField,
 } from '@mui/material';
+import AuthLayout from '../components/Auth/AuthLayout';
 
 const MIN_PASSWORD_LENGTH = 6;
 const MIN_USERNAME_LENGTH = 2;
 const MAX_USERNAME_LENGTH = 50;
 
-const Register = () => {
+const Register = ({ mode, toggleMode }) => {
   const [formData, setFormData] = useState({
     mail: '',
     username: '',
@@ -23,11 +22,12 @@ const Register = () => {
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     const usernameLength = (formData.username || '').trim().length;
     if (usernameLength < MIN_USERNAME_LENGTH) {
       setError(`Имя пользователя должно быть минимум ${MIN_USERNAME_LENGTH} символов`);
@@ -37,7 +37,7 @@ const Register = () => {
       setError(`Имя пользователя должно быть не более ${MAX_USERNAME_LENGTH} символов`);
       return;
     }
-    
+
     if ((formData.password || '').length < MIN_PASSWORD_LENGTH) {
       setError(`Пароль должен быть минимум ${MIN_PASSWORD_LENGTH} символов`);
       return;
@@ -47,7 +47,8 @@ const Register = () => {
       setError('Пароли не совпадают');
       return;
     }
-    
+
+    setLoading(true);
     try {
       await api.post('/auth/register', {
         mail: formData.mail,
@@ -60,54 +61,38 @@ const Register = () => {
     } catch (err) {
       const errorResponse = err.response?.data;
       const status = err.response?.status;
-      
       const responseMessage = (errorResponse?.message || errorResponse?.error || '').toLowerCase();
-      
+
       let errorMessage = 'Ошибка регистрации';
-      
+
       if (status === 409) {
-        if (responseMessage.includes('mail') || 
-            responseMessage.includes('почт') ||
-            responseMessage.includes('email') ||
-            responseMessage.includes('exists') ||
-            responseMessage.includes('уже') ||
-            responseMessage.includes('зарегистрирован')) {
-          errorMessage = 'Такая почта уже зарегистрирована. Используйте другую почту или войдите в систему.';
-        } else {
-          errorMessage = 'Такая почта уже зарегистрирована. Используйте другую почту или войдите в систему.';
-        }
-      } 
-      else if (responseMessage.includes('mail') || 
-               responseMessage.includes('почт') ||
-               responseMessage.includes('email') ||
-               responseMessage.includes('exists')) {
         errorMessage = 'Такая почта уже зарегистрирована. Используйте другую почту или войдите в систему.';
-      } 
-      else if (status === 400) {
-        errorMessage = errorResponse?.message || 
-                      errorResponse?.error || 
-                      'Проверьте правильность введенных данных';
-      } 
-      else if (status === 500) {
+      } else if (
+        responseMessage.includes('mail') ||
+        responseMessage.includes('почт') ||
+        responseMessage.includes('email') ||
+        responseMessage.includes('exists')
+      ) {
+        errorMessage = 'Такая почта уже зарегистрирована. Используйте другую почту или войдите в систему.';
+      } else if (status === 400) {
+        errorMessage =
+          errorResponse?.message || errorResponse?.error || 'Проверьте правильность введенных данных';
+      } else if (status === 500) {
         const serverMessage = errorResponse?.message || errorResponse?.error || '';
-        if (serverMessage) {
-          errorMessage = serverMessage;
-        } else {
-          errorMessage = 'Внутренняя ошибка сервера. Попробуйте позже.';
-        }
-      } 
-      else if (errorResponse?.message) {
+        errorMessage = serverMessage || 'Внутренняя ошибка сервера. Попробуйте позже.';
+      } else if (errorResponse?.message) {
         errorMessage = errorResponse.message;
-      } 
-      else if (errorResponse?.error) {
+      } else if (errorResponse?.error) {
         if (errorResponse.error === 'Conflict' || errorResponse.error === 'CONFLICT') {
           errorMessage = 'Такая почта уже зарегистрирована. Используйте другую почту или войдите в систему.';
         } else {
           errorMessage = errorResponse.error;
         }
       }
-      
+
       setError(errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -120,108 +105,114 @@ const Register = () => {
     (formData.confirmPassword || '').length > 0 && formData.password !== formData.confirmPassword;
 
   return (
-    <Container maxWidth="sm">
-      <Box sx={{ mt: 8, p: 4, boxShadow: 3, borderRadius: 2 }}>
-        <Typography variant="h4" gutterBottom align="center">
-          Регистрация
-        </Typography>
-        
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-        {success && <Alert severity="success" sx={{ mb: 2 }}>Регистрация успешна! Перенаправление на вход...</Alert>}
-        
-        <form onSubmit={handleSubmit}>
-          <TextField
-            fullWidth
-            label="Почта"
-            type="email"
-            margin="normal"
-            value={formData.mail}
-            onChange={(e) => {
-              setError('');
-              setFormData({ ...formData, mail: e.target.value });
-            }}
-            required
-            disabled={success}
-          />
-          <TextField
-            fullWidth
-            label="Имя пользователя"
-            margin="normal"
-            value={formData.username}
-            onChange={(e) => {
-              setError('');
-              setFormData({ ...formData, username: e.target.value });
-            }}
-            inputProps={{ 
-              minLength: MIN_USERNAME_LENGTH, 
-              maxLength: MAX_USERNAME_LENGTH 
-            }}
-            error={usernameTooShort || usernameTooLong}
-            helperText={
-              usernameTooShort 
-                ? `Минимум ${MIN_USERNAME_LENGTH} символа` 
-                : usernameTooLong 
-                  ? `Максимум ${MAX_USERNAME_LENGTH} символов`
-                  : `От ${MIN_USERNAME_LENGTH} до ${MAX_USERNAME_LENGTH} символов`
-            }
-            required
-            disabled={success}
-          />
-          
-          <TextField
-            fullWidth
-            label="Пароль"
-            type="password"
-            margin="normal"
-            value={formData.password}
-            onChange={(e) => {
-              setError('');
-              setFormData({ ...formData, password: e.target.value });
-            }}
-            inputProps={{ minLength: MIN_PASSWORD_LENGTH }}
-            error={passwordTooShort}
-            helperText={`Минимум ${MIN_PASSWORD_LENGTH} символов`}
-            required
-            disabled={success}
-          />
-          
-          <TextField
-            fullWidth
-            label="Подтвердите пароль"
-            type="password"
-            margin="normal"
-            value={formData.confirmPassword}
-            onChange={(e) => {
-              setError('');
-              setFormData({ ...formData, confirmPassword: e.target.value });
-            }}
-            error={confirmPasswordMismatch}
-            helperText={confirmPasswordMismatch ? 'Пароли не совпадают' : 'Повторите пароль'}
-            required
-            disabled={success}
-          />
-          
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            sx={{ mt: 3, mb: 2 }}
-            disabled={success}
-          >
-            Зарегистрироваться
-          </Button>
-          
-          <Button
-            fullWidth
-            variant="outlined"
-            onClick={() => navigate('/login')}
-            disabled={success}
-          >
-            Назад ко входу
-          </Button>
-        </form>
+    <AuthLayout
+      mode={mode}
+      toggleMode={toggleMode}
+      title='Регистрация'
+      subtitle='Создайте аккаунт и начните вести доходы, расходы и бюджеты в одном месте.'
+      accent='success'
+      highlights={[
+        'Простой старт без сложной настройки',
+        'Учёт бюджета по понятным категориям',
+        'Экспорт данных и контроль финансовой истории',
+      ]}
+    >
+      {error && <Alert severity='error' sx={{ mb: 2 }}>{error}</Alert>}
+      {success && (
+        <Alert severity='success' sx={{ mb: 2 }}>
+          Регистрация успешна! Перенаправляем на вход...
+        </Alert>
+      )}
+
+      <Box component='form' onSubmit={handleSubmit} sx={{ display: 'grid', gap: 2 }}>
+        <TextField
+          fullWidth
+          label='Почта'
+          type='email'
+          value={formData.mail}
+          onChange={(e) => {
+            setError('');
+            setFormData({ ...formData, mail: e.target.value });
+          }}
+          required
+          disabled={loading || success}
+        />
+
+        <TextField
+          fullWidth
+          label='Имя пользователя'
+          value={formData.username}
+          onChange={(e) => {
+            setError('');
+            setFormData({ ...formData, username: e.target.value });
+          }}
+          inputProps={{ minLength: MIN_USERNAME_LENGTH, maxLength: MAX_USERNAME_LENGTH }}
+          error={usernameTooShort || usernameTooLong}
+          helperText={
+            usernameTooShort
+              ? `Минимум ${MIN_USERNAME_LENGTH} символа`
+              : usernameTooLong
+                ? `Максимум ${MAX_USERNAME_LENGTH} символов`
+                : `От ${MIN_USERNAME_LENGTH} до ${MAX_USERNAME_LENGTH} символов`
+          }
+          required
+          disabled={loading || success}
+        />
+
+        <TextField
+          fullWidth
+          label='Пароль'
+          type='password'
+          value={formData.password}
+          onChange={(e) => {
+            setError('');
+            setFormData({ ...formData, password: e.target.value });
+          }}
+          inputProps={{ minLength: MIN_PASSWORD_LENGTH }}
+          error={passwordTooShort}
+          helperText={`Минимум ${MIN_PASSWORD_LENGTH} символов`}
+          required
+          disabled={loading || success}
+        />
+
+        <TextField
+          fullWidth
+          label='Подтвердите пароль'
+          type='password'
+          value={formData.confirmPassword}
+          onChange={(e) => {
+            setError('');
+            setFormData({ ...formData, confirmPassword: e.target.value });
+          }}
+          error={confirmPasswordMismatch}
+          helperText={confirmPasswordMismatch ? 'Пароли не совпадают' : 'Повторите пароль'}
+          required
+          disabled={loading || success}
+        />
+
+        <Button
+          type='submit'
+          fullWidth
+          variant='contained'
+          size='large'
+          sx={{ mt: 1, py: 1.35, fontWeight: 700, borderRadius: 2.5 }}
+          disabled={loading || success}
+        >
+          {loading ? 'Создаём аккаунт...' : 'Зарегистрироваться'}
+        </Button>
+
+        <Button
+          fullWidth
+          variant='outlined'
+          size='large'
+          onClick={() => navigate('/login')}
+          disabled={loading || success}
+          sx={{ py: 1.2, borderRadius: 2.5 }}
+        >
+          Назад ко входу
+        </Button>
       </Box>
-    </Container>
+    </AuthLayout>
   );
 };
 
