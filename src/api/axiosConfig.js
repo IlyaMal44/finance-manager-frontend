@@ -1,6 +1,5 @@
 import axios from 'axios';
 
-// CRA: локально берем из .env.development, в проде по умолчанию '/api'
 const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || '/api';
 
 const api = axios.create({
@@ -8,11 +7,9 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  // Для отладки
   timeout: 10000,
 });
 
-// Интерцептор для логирования запросов
 api.interceptors.request.use(
   (config) => {
     console.log(`Отправка ${config.method.toUpperCase()} запроса на: ${config.url}`);
@@ -25,7 +22,6 @@ api.interceptors.request.use(
   }
 );
 
-// Интерцептор для логирования ответов
 api.interceptors.response.use(
   (response) => {
     console.log(`Ответ от ${response.config.url}:`, response.status);

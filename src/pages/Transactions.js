@@ -63,7 +63,6 @@ const Transactions = () => {
 
   const ROWS_PER_PAGE = 10;
 
-  // Раздельные категории для доходов и расходов
   const incomeCategories = [
     'Зарплата', 'Фриланс', 'Инвестиции', 'Подарок', 'Возврат долга', 'Дивиденды', 'Стипендия', 'Пенсия', 'Другое (доход)',
   ];
@@ -75,7 +74,6 @@ const Transactions = () => {
     'Красота', 'Спорт', 'Другое (расход)',
   ];
 
-  // Все категории для фильтров: стандартные + уникальные из транзакций (свои категории)
   const categoriesForFilter = [
     ...new Set([
       ...incomeCategories,
@@ -84,7 +82,6 @@ const Transactions = () => {
     ]),
   ].sort((a, b) => a.localeCompare(b));
 
-  // Получаем текущие категории в зависимости от типа транзакции (для редактирования)
   const getCurrentCategoriesForEdit = () => {
     if (!editTransaction) return [];
     return editTransaction.type === 'INCOME' ? incomeCategories : expenseCategories;
@@ -94,18 +91,13 @@ const Transactions = () => {
     setLoading(true);
     setError('');
     try {
-      // Получаем реальные транзакции из backend
       const response = await api.get(`/finance/${walletId}/transactions`);
-
-      // Ожидаемый формат: массив объектов
-      // { id, type: 'INCOME' | 'EXPENSE', amount, category, description, date }
       const data = Array.isArray(response.data) ? response.data : [];
       setTransactions(data);
     } catch (error) {
       console.error('Ошибка загрузки транзакций:', error);
       setError(error.response?.data?.message || 'Не удалось загрузить историю транзакций');
 
-      // Если пользователь не авторизован
       if (error.response?.status === 401 || error.response?.status === 403) {
         localStorage.removeItem('user');
         localStorage.removeItem('walletId');
@@ -207,7 +199,6 @@ const Transactions = () => {
       const date = new Date(dateString);
       if (Number.isNaN(date.getTime())) return dateString;
 
-      // Всегда показываем время по Москве, чтобы не было сдвигов из-за таймзоны устройства/браузера
       const tz = 'Europe/Moscow';
       const parts = new Intl.DateTimeFormat('ru-RU', {
         timeZone: tz,
@@ -1172,7 +1163,6 @@ const Transactions = () => {
                           onChange={(e) => {
                             const newType = e.target.value;
                             const newCategories = newType === 'INCOME' ? incomeCategories : expenseCategories;
-                            // Сбрасываем категорию, если она не подходит для нового типа
                             const shouldResetCategory = !newCategories.includes(editTransaction.category);
                             setEditTransaction({
                               ...editTransaction,

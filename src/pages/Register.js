@@ -54,7 +54,6 @@ const Register = () => {
         username: formData.username,
         password: formData.password,
       });
-      // Покажем помощь при первом заходе в приложение после регистрации
       localStorage.setItem('helpAutoOpen', '1');
       setSuccess(true);
       setTimeout(() => navigate('/login'), 2000);
@@ -64,10 +63,8 @@ const Register = () => {
       
       const responseMessage = (errorResponse?.message || errorResponse?.error || '').toLowerCase();
       
-      // Обработка различных типов ошибок
       let errorMessage = 'Ошибка регистрации';
       
-      // Статус 409 - конфликт (почта уже существует)
       if (status === 409) {
         if (responseMessage.includes('mail') || 
             responseMessage.includes('почт') ||
@@ -77,11 +74,9 @@ const Register = () => {
             responseMessage.includes('зарегистрирован')) {
           errorMessage = 'Такая почта уже зарегистрирована. Используйте другую почту или войдите в систему.';
         } else {
-          // Если сообщение не содержит ключевых слов, но статус 409 - скорее всего конфликт с почтой
           errorMessage = 'Такая почта уже зарегистрирована. Используйте другую почту или войдите в систему.';
         }
       } 
-      // Проверка на почту в других статусах
       else if (responseMessage.includes('mail') || 
                responseMessage.includes('почт') ||
                responseMessage.includes('email') ||
@@ -89,13 +84,11 @@ const Register = () => {
         errorMessage = 'Такая почта уже зарегистрирована. Используйте другую почту или войдите в систему.';
       } 
       else if (status === 400) {
-        // Ошибка валидации
         errorMessage = errorResponse?.message || 
                       errorResponse?.error || 
                       'Проверьте правильность введенных данных';
       } 
       else if (status === 500) {
-        // Серверная ошибка - проверяем сообщение
         const serverMessage = errorResponse?.message || errorResponse?.error || '';
         if (serverMessage) {
           errorMessage = serverMessage;
@@ -107,7 +100,6 @@ const Register = () => {
         errorMessage = errorResponse.message;
       } 
       else if (errorResponse?.error) {
-        // Если пришло просто "Conflict" или другое техническое сообщение
         if (errorResponse.error === 'Conflict' || errorResponse.error === 'CONFLICT') {
           errorMessage = 'Такая почта уже зарегистрирована. Используйте другую почту или войдите в систему.';
         } else {

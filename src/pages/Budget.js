@@ -82,17 +82,14 @@ const Budget = () => {
     setSnackbar({ open: true, message, severity });
   }, []);
 
-  // Загрузка данных
   const fetchData = useCallback(async () => {
     if (!walletId) return;
     
     setLoading(true);
     try {
-      // Получаем статистику, которая содержит информацию о бюджетах
       const statsResponse = await api.get(`/finance/${walletId}/statistics`);
       setStatistics(statsResponse.data);
       
-      // Преобразуем статусы бюджетов в массив
       if (statsResponse.data.budgetStatus) {
         const budgetsArray = Object.entries(statsResponse.data.budgetStatus).map(([category, status]) => ({
           category,
@@ -120,7 +117,6 @@ const Budget = () => {
     fetchData();
   }, [user, navigate, fetchData]);
 
-  // Установка нового бюджета
   const handleSetBudget = async () => {
     if (!newBudget.category || !newBudget.limitAmount || newBudget.limitAmount <= 0) {
       showSnackbar('Заполните все поля корректно', 'warning');
@@ -134,8 +130,6 @@ const Budget = () => {
       };
 
       if (editingBudget) {
-        // Обновление существующего бюджета
-        // Если категория изменилась — "переименовываем": удаляем старый бюджет и создаём новый
         if (editingBudget.category && editingBudget.category !== newBudget.category) {
           await api.delete(`/finance/${walletId}/budget`, {
             params: { category: editingBudget.category }
@@ -150,7 +144,6 @@ const Budget = () => {
           showSnackbar(`Бюджет для "${newBudget.category}" обновлен!`, 'success');
         }
       } else {
-        // Создание нового бюджета
         await api.post(`/finance/${walletId}/budget`, budgetData);
         showSnackbar(`Бюджет для "${newBudget.category}" установлен!`, 'success');
       }
@@ -166,7 +159,6 @@ const Budget = () => {
     }
   };
 
-  // Удаление бюджета
   const handleDeleteBudget = async (category) => {
     if (!window.confirm(`Удалить бюджет для категории "${category}"?`)) return;
 
@@ -176,7 +168,7 @@ const Budget = () => {
       });
       
       showSnackbar(`Бюджет для "${category}" удален`, 'success');
-      fetchData(); // Обновляем данные
+      fetchData();
       
     } catch (error) {
       console.error('Ошибка удаления бюджета:', error);
@@ -184,7 +176,6 @@ const Budget = () => {
     }
   };
 
-  // Редактирование бюджета
   const handleEditBudget = (budget) => {
     setEditingBudget(budget);
     setNewBudget({
@@ -194,7 +185,6 @@ const Budget = () => {
     setOpenDialog(true);
   };
 
-  // Установка нескольких бюджетов (быстрый выбор)
   const handleQuickSetBudgets = async (quickBudgets) => {
     try {
       const budgetsArray = quickBudgets.map(budget => ({
@@ -238,7 +228,6 @@ const Budget = () => {
     return 'В норме';
   };
 
-  // Быстрые шаблоны бюджетов
   const quickBudgetTemplates = [
     {
       name: 'Шаблон',
@@ -287,7 +276,6 @@ const Budget = () => {
 
   const normalizedBudgetQuery = (budgetQuery || '').trim().toLowerCase();
   const budgetsSorted = [...budgets].sort((a, b) => {
-    // Сначала превышенные, затем по % использования, затем по алфавиту
     if (!!a.exceeded !== !!b.exceeded) return a.exceeded ? -1 : 1;
     const ap = Number(a.usagePercentage) || 0;
     const bp = Number(b.usagePercentage) || 0;
@@ -1248,8 +1236,6 @@ const Budget = () => {
         </DialogTitle>
         <DialogContent
           sx={{
-            // В fullScreen-диалоге DialogContent по умолчанию растягивается (flex: 1),
-            // из-за чего кнопки уезжают вниз и появляется "пустота".
             flex: 'unset',
             pb: { xs: 2, sm: 3 },
           }}

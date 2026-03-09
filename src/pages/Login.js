@@ -40,7 +40,6 @@ const Login = () => {
       
       let errorMessage = 'Ошибка входа';
       
-      // Пользователь не найден (404)
       if (status === 404) {
         if (responseMessage.includes('user') || 
             responseMessage.includes('пользователь') ||
@@ -50,11 +49,9 @@ const Login = () => {
           errorMessage = 'Пользователь не найден. Проверьте данные или зарегистрируйтесь.';
         }
       }
-      // Неверный пароль или неавторизован (401)
       else if (status === 401) {
         errorMessage = 'Неверный пароль. Проверьте правильность ввода.';
       }
-      // Неверные учетные данные (обычно 400 или 403)
       else if (status === 400 || status === 403) {
         if (responseMessage.includes('password') || 
             responseMessage.includes('пароль') ||
@@ -65,7 +62,6 @@ const Login = () => {
           errorMessage = errorResponse?.message || 'Неверные учетные данные. Проверьте почту и пароль.';
         }
       }
-      // Серверная ошибка
       else if (status === 500) {
         const serverMessage = errorResponse?.message || errorResponse?.error || '';
         if (serverMessage.toLowerCase().includes('user') && serverMessage.toLowerCase().includes('not found')) {
@@ -74,7 +70,6 @@ const Login = () => {
           errorMessage = serverMessage || 'Внутренняя ошибка сервера. Попробуйте позже.';
         }
       }
-      // Другие ошибки
       else if (errorResponse?.message) {
         errorMessage = errorResponse.message;
       } else if (errorResponse?.error) {

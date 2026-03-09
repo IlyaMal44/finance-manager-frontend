@@ -35,7 +35,6 @@ const Header = ({ mode, toggleMode }) => {
   const [helpOpen, setHelpOpen] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   
-  // Определяем активный раздел
   const isActive = (path) => {
     if (path === '/dashboard') {
       return location.pathname === '/' || location.pathname === '/dashboard';
@@ -48,7 +47,6 @@ const Header = ({ mode, toggleMode }) => {
   const handleCloseMenu = () => setMenuAnchorEl(null);
 
   useEffect(() => {
-    // Автопоказ помощи после регистрации (один раз)
     const shouldAutoOpenHelp = localStorage.getItem('helpAutoOpen') === '1';
     if (!shouldAutoOpenHelp) return;
     localStorage.removeItem('helpAutoOpen');

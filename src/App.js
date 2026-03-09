@@ -3,7 +3,6 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 
-// Страницы
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ForgotPassword from './pages/ForgotPassword';
@@ -13,7 +12,6 @@ import Transactions from './pages/Transactions';
 import Budget from './pages/Budget';
 import Export from './pages/Export';
 
-// Компоненты
 import Header from './components/Layout/Header';
 
 function App() {

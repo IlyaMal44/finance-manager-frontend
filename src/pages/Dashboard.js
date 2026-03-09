@@ -50,7 +50,6 @@ const Dashboard = () => {
   
   const navigate = useNavigate();
   
-  // Раздельные категории для доходов и расходов
   const incomeCategories = [
     { value: 'Зарплата', icon: '💰', color: '#4CAF50' },
     { value: 'Фриланс', icon: '💼', color: '#2196F3' },
@@ -81,7 +80,6 @@ const Dashboard = () => {
     { value: 'Другое (расход)', icon: '📦', color: '#9E9E9E' },
   ];
 
-  // Получаем текущие категории в зависимости от типа транзакции
   const getCurrentCategories = () => {
     return transaction.type === 'INCOME' ? incomeCategories : expenseCategories;
   };
@@ -132,8 +130,6 @@ const Dashboard = () => {
       return;
     }
 
-    // Предпроверка: если это расход и денег меньше, чем сумма — покажем понятную ошибку сразу.
-    // (Бэкенд сейчас может вернуть 500 без message, и фронт не сможет понять причину.)
     if (transaction.type === 'EXPENSE' && typeof statistics?.balance === 'number') {
       const balance = statistics.balance;
       if (amountValue > balance) {
@@ -204,7 +200,6 @@ const Dashboard = () => {
     }).format(amount || 0);
   };
 
-  // Форматирование суммы в инпуте: "200000" -> "200 000", поддержка "." / "," для копеек.
   const sanitizeAmountInput = (input) => {
     const s = String(input ?? '')
       .replace(/\s+/g, '')
@@ -222,7 +217,6 @@ const Dashboard = () => {
 
     if (out.includes('.')) {
       const [i, d = ''] = out.split('.');
-      // максимум 2 знака после точки
       return `${i}.${d.slice(0, 2)}`;
     }
     return out;
@@ -242,7 +236,6 @@ const Dashboard = () => {
   const formatCurrencyForTile = (amount) => {
     const value = typeof amount === 'number' ? amount : Number(amount);
     if (!Number.isFinite(value)) return '0 ₽';
-    // Для плиток показываем полное число, но без копеек — так короче и лучше помещается.
     return new Intl.NumberFormat('ru-RU', {
       style: 'currency',
       currency: 'RUB',
@@ -274,7 +267,6 @@ const Dashboard = () => {
     return Object.values(statistics.budgetStatus).some(budget => budget.exceeded);
   };
 
-  // При изменении типа транзакции сбрасываем категорию
   const handleTypeChange = (type) => {
     setTransaction({
       ...transaction,
@@ -611,7 +603,7 @@ const Dashboard = () => {
             </CardContent>
           </Card>
       </Box>
-
+бе
       <Grid container spacing={3}>
         {/* Левая колонка: Новая транзакция */}
         <Grid item xs={12} md={6}>
@@ -690,8 +682,6 @@ const Dashboard = () => {
                         setTransaction({ ...transaction, category: newValue || '' })
                       }
                       onInputChange={(e, inputValue, reason) => {
-                        // Важно: синхронизируем state только когда пользователь реально вводит/очищает.
-                        // Иначе Autocomplete может показывать старый inputValue при пустом value.
                         if (reason === 'input') {
                           setTransaction((prev) => ({ ...prev, category: inputValue || '' }));
                         }
