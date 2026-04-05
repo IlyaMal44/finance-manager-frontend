@@ -603,7 +603,6 @@ const Dashboard = () => {
             </CardContent>
           </Card>
       </Box>
-бе
       <Grid container spacing={3}>
         {/* Левая колонка: Новая транзакция */}
         <Grid item xs={12} md={6}>
